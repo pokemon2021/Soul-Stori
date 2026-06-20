@@ -619,11 +619,10 @@ const BASE_DATA=[{"id":1,"sku":"1IJ0001","loc":"MR3","name":"Tirthankar","subcat
 // ═══════════════════════════════════════════════════════════════
 // CONFIGURATION — set these once, they persist per browser
 // ═══════════════════════════════════════════════════════════════
-const CFG = (() => {
-  try { return JSON.parse(localStorage.getItem('ss_cfg') || '{}'); } catch(e){ return {}; }
-})();
-const SB_URL = CFG.url || '';
-const SB_KEY = CFG.key || '';
+// ── SUPABASE CONFIG ──────────────────────────────────────────
+// Your project credentials — hardcoded so the app connects automatically
+const SB_URL = 'https://tergdjqcneqgdruyvlzz.supabase.co';
+const SB_KEY = 'sb_publishable_v87oPflUEP761I13JOEFAQ_i5t-gwLU';
 
 // ── SUPABASE HELPERS ──────────────────────────────────────────
 function sbH(extra) {
