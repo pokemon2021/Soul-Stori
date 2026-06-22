@@ -625,8 +625,18 @@ const SB_URL = 'https://tergdjqcneqgdruyvlzz.supabase.co';
 const SB_KEY = 'sb_publishable_v87oPflUEP761I13JOEFAQ_i5t-gwLU';
 
 // ── SUPABASE HELPERS ──────────────────────────────────────────
+function getToken() {
+  try {
+    const s = JSON.parse(localStorage.getItem('ss_session') || '{}');
+    return s.access_token || SB_KEY;
+  } catch(e) { return SB_KEY; }
+}
 function sbH(extra) {
-  return Object.assign({'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json'}, extra||{});
+  return Object.assign({
+    'apikey': SB_KEY,
+    'Authorization': 'Bearer ' + getToken(),
+    'Content-Type': 'application/json'
+  }, extra || {});
 }
 function sbFetch(path, opts) {
   return fetch(SB_URL+'/rest/v1/'+path, Object.assign({headers:sbH({'Prefer':'return=representation'})}, opts||{}));
@@ -744,7 +754,7 @@ async function fetchSignedUrls(filenames) {
     try{
       const res=await fetch(SB_URL+'/storage/v1/object/sign/soulstori-photos',{
         method:'POST',
-        headers:{'apikey':SB_KEY,'Authorization':'Bearer '+(s.access_token||SB_KEY),'Content-Type':'application/json'},
+        headers:{'apikey':SB_KEY,'Authorization':'Bearer '+getToken(),'Content-Type':'application/json'},
         body:JSON.stringify({expiresIn:31536000,paths:chunk})
       });
       if(res.ok){const r=await res.json();r.forEach(x=>{if(x.signedURL)signedUrlCache[x.path]=SB_URL+'/storage/v1'+x.signedURL;});}
@@ -798,7 +808,10 @@ async function seedDatabase() {
   for(let i=0;i<BASE_DATA.length;i+=50) chunks.push(BASE_DATA.slice(i,i+50));
   let done=0;
   for(const chunk of chunks){
-    await sbFetch('soulstori_inventory',{method:'POST',body:JSON.stringify(chunk.map(itemToDbRow)),headers:sbH({'Prefer':'resolution=ignore-duplicates,return=minimal'})});
+    const seedRes = await fetch(SB_URL+'/rest/v1/soulstori_inventory',{method:'POST',
+      headers:{'apikey':SB_KEY,'Authorization':'Bearer '+getToken(),'Content-Type':'application/json','Prefer':'resolution=ignore-duplicates,return=minimal'},
+      body:JSON.stringify(chunk.map(itemToDbRow))});
+    if(!seedRes.ok){const e=await seedRes.text();console.error('Seed chunk failed:',seedRes.status,e);}
     done+=chunk.length;
     setProgress(35+Math.round((done/BASE_DATA.length)*55),'Uploading '+done+' of '+BASE_DATA.length+'…');
   }
