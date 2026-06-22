@@ -622,7 +622,7 @@ const BASE_DATA=[{"id":1,"sku":"1IJ0001","loc":"MR3","name":"Tirthankar","subcat
 // ── SUPABASE CONFIG ──────────────────────────────────────────
 // Your project credentials — hardcoded so the app connects automatically
 const SB_URL = 'https://tergdjqcneqgdruyvlzz.supabase.co';
-const SB_KEY = 'sb_publishable_v87oPflUEP761I13JOEFAQ_i5t-gwLU';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRlcmdkanFjbmVxZ2RydXl2bHp6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE5NDQ5NTgsImV4cCI6MjA5NzUyMDk1OH0.pYxVtMIYeS3_xFeH1ABvj_KfY9SbyC7Bsi2K052Qu3U';
 
 // ── SUPABASE HELPERS ──────────────────────────────────────────
 function getToken() {
@@ -742,24 +742,46 @@ function gdUrl(url) {
   if(url.startsWith('http://') || url.startsWith('https://')) return url;
   const m=url.match(/\/file\/d\/([a-zA-Z0-9_-]{20,})/)||url.match(/id=([a-zA-Z0-9_-]{20,})/)||url.match(/\/d\/([a-zA-Z0-9_-]{20,})/);
   if(m) return 'https://drive.google.com/thumbnail?id='+m[1]+'&sz=w600';
-  if(/^[a-zA-Z0-9_.\-]+\.(jpg|jpeg|png|webp)$/i.test(url)) return signedUrlCache[url]||'';
+  if(/^[a-zA-Z0-9_.\-]+\.(jpg|jpeg|png|webp)$/i.test(url)) return SB_URL+'/storage/v1/object/public/soulstori-photos/'+encodeURIComponent(url);
   return url;
 }
 async function fetchSignedUrls(filenames) {
   const unique=[...new Set(filenames)].filter(f=>f&&!signedUrlCache[f]);
   if(!unique.length||!SB_URL||!SB_KEY) return;
-  const s=JSON.parse(localStorage.getItem('ss_session')||'{}');
-  for(let i=0;i<unique.length;i+=100){
-    const chunk=unique.slice(i,i+100);
+  let anyLoaded=false;
+  for(let i=0;i<unique.length;i+=50){
+    const chunk=unique.slice(i,i+50);
     try{
       const res=await fetch(SB_URL+'/storage/v1/object/sign/soulstori-photos',{
         method:'POST',
         headers:{'apikey':SB_KEY,'Authorization':'Bearer '+getToken(),'Content-Type':'application/json'},
         body:JSON.stringify({expiresIn:31536000,paths:chunk})
       });
-      if(res.ok){const r=await res.json();r.forEach(x=>{if(x.signedURL)signedUrlCache[x.path]=SB_URL+'/storage/v1'+x.signedURL;});}
+      if(res.ok){
+        const r=await res.json();
+        // Handle both array and object response formats
+        const arr=Array.isArray(r)?r:(r.data||[]);
+        arr.forEach(function(x){
+          // Supabase returns {path, signedURL} or {path, signedUrl}
+          const signed=x.signedURL||x.signedUrl||x.signed_url||'';
+          const path=x.path||x.name||'';
+          if(signed&&path){
+            // Store by both full path and just filename
+            const fname=path.split('/').pop();
+            const fullUrl=signed.startsWith('http')?signed:SB_URL+'/storage/v1'+signed;
+            signedUrlCache[path]=fullUrl;
+            signedUrlCache[fname]=fullUrl;
+            anyLoaded=true;
+          }
+        });
+      } else {
+        const errText=await res.text();
+        console.warn('Sign URL failed:',res.status,errText);
+      }
     }catch(e){console.warn('Sign fail',e);}
   }
+  // Re-render grid after signing so photos appear immediately
+  if(anyLoaded&&typeof render==='function') render();
 }
 
 // ── BRANDED PLACEHOLDER ────────────────────────────────────────
@@ -891,6 +913,11 @@ function finishLoad(){
       el('main-header').style.display='flex';
       el('main-app').style.display='flex';
       fillDropdowns(); runFilter();
+      // Sign URLs progressively in background after app is visible
+      const photoFiles=items.filter(i=>i.photoUrl&&!i.photoUrl.startsWith('http')).map(i=>i.photoUrl);
+      if(photoFiles.length) {
+        setTimeout(()=>fetchSignedUrls(photoFiles),500);
+      }
     },350);
   },400);
 }
