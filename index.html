@@ -535,9 +535,15 @@ input:checked+.tog-sl:before{transform:translateX(15px)}
       <div class="fgroup"><div class="trow"><label class="tog"><input type="checkbox" id="f-wa"><span class="tog-sl"></span></label><span class="tlab">WhatsApp Catalogue</span></div></div>
       <hr class="sdiv"><div class="shead">Photo</div>
       <div class="fgroup full">
-        <label class="flabel">Google Drive Photo Link</label>
-        <input class="finput" id="f-photo-url" placeholder="https://drive.google.com/file/d/FILE_ID/view?usp=sharing">
-        <div class="photo-hint">&#128204; Upload to Google Drive &#8594; Share &#8594; Anyone with link &#8594; Copy link &#8594; Paste above. Photo shows automatically.</div>
+        <label class="flabel">Product Photo</label>
+        <input type="hidden" id="f-photo-url">
+        <input type="file" id="f-photo-file" accept="image/*" style="display:none" onchange="handlePhotoPick(this)">
+        <div id="photo-preview" class="hidden" style="margin-bottom:8px"></div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <button type="button" class="btn btn-dark" id="photo-upload-btn" onclick="el('f-photo-file').click()">&#128247; Upload Photo</button>
+          <button type="button" class="btn hidden" id="photo-remove-btn" onclick="removePhoto()">Remove</button>
+        </div>
+        <div id="photo-status" class="photo-hint" style="margin-top:6px"></div>
       </div>
       <div class="fgroup full"><label class="flabel">Notes</label><textarea class="finput ftarea" id="f-notes" placeholder="Condition, sourcing, special features&#8230;"></textarea></div>
     </div></div>
@@ -1121,8 +1127,8 @@ async function delItem(id){if(!confirm('Delete this piece permanently? Use Sell 
 // ═══════════════════════════════════════════════════════════════
 // ADD / EDIT
 // ═══════════════════════════════════════════════════════════════
-function openAdd(){if(userRole!=='admin'){alert('Only admins can add new stock. Contact Aj to get access.');return;}editId=null;el('mod-t').textContent='Add New Stock';['f-sku','f-loc','f-name','f-sub','f-cat','f-stone','f-orig','f-certno','f-certb','f-wcts','f-wkg','f-ht','f-w','f-d','f-cost','f-lp','f-price','f-usd','f-notes','f-photo-url'].forEach(id=>el(id).value='');['f-cert','f-por','f-photo','f-web','f-etsy','f-wa'].forEach(id=>el(id).checked=false);el('f-scat').value='';el('f-status').value='available';el('f-wunit').value='kg';el('modOv').classList.remove('hidden');}
-function openEdit(id){const item=items.find(i=>i.id===id);if(!item){alert('Item not found.');return;}editId=id;el('mod-t').textContent='Edit — '+item.sku;setV('f-sku',item.sku);setV('f-loc',item.loc);setV('f-name',item.name);setV('f-sub',item.subcat);setV('f-cat',item.category);setV('f-stone',item.stone);setV('f-orig',item.origin);setV('f-certno',item.certNo);setV('f-certb',item.certBody);setV('f-wcts',item.wtCts);setV('f-wkg',item.wtKg);setV('f-ht',item.ht);setV('f-w',item.width);setV('f-d',item.depth);setV('f-cost',item.cost);setV('f-lp',item.listPrice);setV('f-price',item.price);setV('f-usd',item.priceUSD);setV('f-notes',item.notes);setV('f-photo-url',item.photoUrl);el('f-scat').value=item.stoneCat||'';el('f-status').value=item.status||'available';el('f-wunit').value='kg';setC('f-cert',item.certified);setC('f-por',item.por);setC('f-photo',item.hasPhoto);setC('f-web',item.chWeb);setC('f-etsy',item.chEtsy);setC('f-wa',item.chWA);el('modOv').classList.remove('hidden');}
+function openAdd(){if(userRole!=='admin'){alert('Only admins can add new stock. Contact Aj to get access.');return;}editId=null;el('mod-t').textContent='Add New Stock';['f-sku','f-loc','f-name','f-sub','f-cat','f-stone','f-orig','f-certno','f-certb','f-wcts','f-wkg','f-ht','f-w','f-d','f-cost','f-lp','f-price','f-usd','f-notes','f-photo-url'].forEach(id=>el(id).value='');['f-cert','f-por','f-photo','f-web','f-etsy','f-wa'].forEach(id=>el(id).checked=false);el('f-scat').value='';el('f-status').value='available';el('f-wunit').value='kg';el('photo-status').textContent='';refreshPhotoPreview();el('modOv').classList.remove('hidden');}
+function openEdit(id){const item=items.find(i=>i.id===id);if(!item){alert('Item not found.');return;}editId=id;el('mod-t').textContent='Edit — '+item.sku;setV('f-sku',item.sku);setV('f-loc',item.loc);setV('f-name',item.name);setV('f-sub',item.subcat);setV('f-cat',item.category);setV('f-stone',item.stone);setV('f-orig',item.origin);setV('f-certno',item.certNo);setV('f-certb',item.certBody);setV('f-wcts',item.wtCts);setV('f-wkg',item.wtKg);setV('f-ht',item.ht);setV('f-w',item.width);setV('f-d',item.depth);setV('f-cost',item.cost);setV('f-lp',item.listPrice);setV('f-price',item.price);setV('f-usd',item.priceUSD);setV('f-notes',item.notes);setV('f-photo-url',item.photoUrl);el('f-scat').value=item.stoneCat||'';el('f-status').value=item.status||'available';el('f-wunit').value='kg';setC('f-cert',item.certified);setC('f-por',item.por);setC('f-photo',item.hasPhoto);setC('f-web',item.chWeb);setC('f-etsy',item.chEtsy);setC('f-wa',item.chWA);el('photo-status').textContent='';refreshPhotoPreview();el('modOv').classList.remove('hidden');}
 function hideMod(){el('modOv').classList.add('hidden');editId=null;}
 async function savePiece(){
   const sku=el('f-sku').value.trim(),name=el('f-name').value.trim();
@@ -1138,6 +1144,63 @@ async function savePiece(){
   if(detId===editId&&editId!==null)showDetail(editId);
   await upsertItem(item);
   logMove(item.sku,item.name,editId!==null?'EDITED':'ADDED',editId!==null?'Details updated':'New stock added');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PHOTO UPLOAD (Supabase Storage)
+// ═══════════════════════════════════════════════════════════════
+function refreshPhotoPreview(){
+  const fn=el('f-photo-url').value.trim();
+  const prev=el('photo-preview'),rm=el('photo-remove-btn'),up=el('photo-upload-btn');
+  if(fn){
+    prev.innerHTML='<img src="'+esc(gdUrl(fn))+'" style="width:120px;height:120px;object-fit:cover;border-radius:10px;border:1px solid var(--border)" onerror="this.style.opacity=.3">';
+    prev.classList.remove('hidden');rm.classList.remove('hidden');up.innerHTML='&#128247; Replace Photo';
+  } else {
+    prev.innerHTML='';prev.classList.add('hidden');rm.classList.add('hidden');up.innerHTML='&#128247; Upload Photo';
+  }
+}
+function removePhoto(){el('f-photo-url').value='';el('photo-status').textContent='';refreshPhotoPreview();}
+async function handlePhotoPick(input){
+  const file=input.files&&input.files[0];
+  if(!file)return;
+  if(!file.type.startsWith('image/')){alert('Please choose an image file (jpg, png, etc.).');input.value='';return;}
+  const st=el('photo-status'),up=el('photo-upload-btn');
+  st.style.color='';st.textContent='Preparing photo…';up.disabled=true;
+  try{
+    const blob=await shrinkImage(file);
+    const sku=(el('f-sku').value.trim()||'item').replace(/[^a-zA-Z0-9_-]/g,'');
+    const fname=sku+'-'+Date.now()+'.jpg';
+    st.textContent='Uploading…';
+    const res=await fetch(SB_URL+'/storage/v1/object/SoulStori-photos/'+encodeURIComponent(fname),{
+      method:'POST',
+      headers:{'apikey':SB_KEY,'Authorization':'Bearer '+getToken(),'Content-Type':'image/jpeg','x-upsert':'true'},
+      body:blob
+    });
+    if(!res.ok)throw new Error(await res.text());
+    el('f-photo-url').value=fname;el('f-photo').checked=true;
+    st.style.color='var(--green)';st.textContent='Photo uploaded ✓';
+    refreshPhotoPreview();
+  }catch(e){
+    console.error('Photo upload failed',e);
+    st.style.color='var(--red)';st.textContent='Upload failed — please try again.';
+  }finally{up.disabled=false;input.value='';}
+}
+// Shrink large photos to max ~1400px and compress to JPEG before upload
+function shrinkImage(file){
+  return new Promise((resolve,reject)=>{
+    const img=new Image();
+    img.onload=function(){
+      const MAX=1400;let w=img.width,h=img.height;
+      if(w>MAX||h>MAX){const s=Math.min(MAX/w,MAX/h);w=Math.round(w*s);h=Math.round(h*s);}
+      const c=document.createElement('canvas');c.width=w;c.height=h;
+      const ctx=c.getContext('2d');
+      ctx.fillStyle='#ffffff';ctx.fillRect(0,0,w,h); // transparent PNG areas become clean white, not black
+      ctx.drawImage(img,0,0,w,h);
+      c.toBlob(b=>b?resolve(b):reject(new Error('Could not process image')),'image/jpeg',0.85);
+    };
+    img.onerror=()=>reject(new Error('Could not read image'));
+    img.src=URL.createObjectURL(file);
+  });
 }
 
 // ═══════════════════════════════════════════════════════════════
