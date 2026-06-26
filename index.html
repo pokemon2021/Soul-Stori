@@ -166,7 +166,7 @@ header{background:var(--stone);padding:0 20px;display:flex;align-items:center;ju
 .xbtn{background:none;border:none;color:var(--gold-l);font-size:19px;cursor:pointer;padding:2px;line-height:1}
 .xbtn:hover{color:var(--gold)}
 .det-img-box{height:195px;background:linear-gradient(135deg,var(--gold-p),#EDE0C8);display:flex;align-items:center;justify-content:center;font-size:52px;flex-shrink:0;position:relative;overflow:hidden}
-.det-img-box img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.det-img-box img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
 .det-body{padding:15px 18px;flex:1}
 .det-name{font-family:'Cormorant Garamond',serif;font-size:21px;font-weight:600;color:var(--stone);margin-bottom:2px}
 .det-sub{font-size:13px;color:var(--stone-l);margin-bottom:11px}
@@ -747,7 +747,7 @@ function gdUrl(url) {
   if(url.includes('googleusercontent.com')||url.includes('thumbnail?')||url.includes('uc?export')) return url;
   if(url.startsWith('http://') || url.startsWith('https://')) return url;
   const m=url.match(/\/file\/d\/([a-zA-Z0-9_-]{20,})/)||url.match(/id=([a-zA-Z0-9_-]{20,})/)||url.match(/\/d\/([a-zA-Z0-9_-]{20,})/);
-  if(m) return 'https://drive.google.com/thumbnail?id='+m[1]+'&sz=w600';
+  if(m) return 'https://drive.google.com/thumbnail?id='+m[1]+'&sz=w1600';
   if(/^[a-zA-Z0-9_.\-]+\.(jpg|jpeg|png|webp)$/i.test(url)) return SB_URL+'/storage/v1/object/public/SoulStori-photos/'+encodeURIComponent(url);
   return url;
 }
