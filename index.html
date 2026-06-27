@@ -919,6 +919,7 @@ function finishLoad(){
       el('main-header').style.display='flex';
       el('main-app').style.display='flex';
       fillDropdowns(); runFilter();
+      openPendingSku();
       // Sign URLs progressively in background after app is visible
       const photoFiles=items.filter(i=>i.photoUrl&&!i.photoUrl.startsWith('http')).map(i=>i.photoUrl);
       if(photoFiles.length) {
@@ -1235,9 +1236,23 @@ async function confirmRemove(){
 // QR CODE LABELS
 // ═══════════════════════════════════════════════════════════════
 function qrContent(item){
-  // Encode SKU + key details — any QR scanner or phone camera reads this
-  // Format: SS|SKU|NAME|STONE so it's self-describing even outside the app
-  return `SS|${item.sku}|${item.name}|${item.stone||''}|${item.loc||''}`;
+  // Encode a link to THIS app that opens the scanned piece directly.
+  // Uses the live domain the labels were printed from, so a phone camera
+  // opens the app (and jumps to the item) instead of doing a web search.
+  return location.origin + location.pathname + '?sku=' + encodeURIComponent(item.sku);
+}
+
+// When the app is opened from a scanned QR link (?sku=...), jump to that piece.
+function openPendingSku(){
+  try{
+    const raw=new URLSearchParams(location.search).get('sku');
+    if(!raw) return;
+    history.replaceState({},'',location.pathname); // clear so a later reload won't re-trigger
+    const key=raw.trim().toUpperCase().replace(/\s/g,'');
+    const item=items.find(i=>(i.sku||'').toUpperCase().replace(/\s/g,'')===key);
+    if(item){ showDetail(item.id); }
+    else { goScan(); el('scan-inp').value=raw; doScan(); }
+  }catch(e){ console.warn('QR open failed',e); }
 }
 
 function buildQRLabel(item, container, showPrice, showLoc) {
