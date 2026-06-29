@@ -65,6 +65,9 @@ header{background:var(--stone);padding:0 20px;display:flex;align-items:center;ju
 /* ── LAYOUT ── */
 .app{display:flex;height:calc(100vh - 58px)}
 .sb{width:244px;background:var(--w);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;flex-shrink:0}
+.menu-btn{display:none;background:none;border:none;color:var(--gold-l);font-size:22px;cursor:pointer;padding:2px 6px;line-height:1;flex-shrink:0}
+.sb-backdrop{display:none;position:fixed;inset:58px 0 0 0;background:rgba(44,40,37,.45);z-index:250}
+.sb-backdrop.open{display:block}
 .main{flex:1;overflow-y:auto;display:flex;flex-direction:column}
 
 /* ── SIDEBAR ── */
@@ -412,7 +415,7 @@ input:checked+.tog-sl:before{transform:translateX(15px)}
 .hidden{display:none!important}
 .access-denied{padding:40px;text-align:center;color:var(--stone-l)}
 .access-denied h2{font-family:'Cormorant Garamond',serif;color:var(--stone);margin-bottom:8px}
-@media(max-width:768px){.sb{display:none}.det-p{width:100vw}.chart-row{grid-template-columns:1fr}.size-grid{grid-template-columns:repeat(3,1fr)}.fg{grid-template-columns:1fr}.hstats{display:none}}
+@media(max-width:768px){.menu-btn{display:block}.sb{position:fixed;left:0;top:58px;bottom:0;width:82%;max-width:310px;z-index:300;transform:translateX(-100%);transition:transform .25s ease;box-shadow:2px 0 22px rgba(0,0,0,.22)}.sb.open{transform:translateX(0)}.det-p{width:100vw}.chart-row{grid-template-columns:1fr}.size-grid{grid-template-columns:repeat(3,1fr)}.fg{grid-template-columns:1fr}.hstats{display:none}}
 </style>
 </head>
 <body>
@@ -443,6 +446,7 @@ input:checked+.tog-sl:before{transform:translateX(15px)}
 </div>
 
 <header id="main-header" style="display:none">
+  <button class="menu-btn" onclick="toggleSidebar()" aria-label="Menu" title="Menu">&#9776;</button>
   <div class="logo-wrap" onclick="goHome()" title="Home">
     <div class="logo">Soul<em>Stori</em></div>
     <div class="tagline">Where Faith Meets Artistry</div>
@@ -464,8 +468,9 @@ input:checked+.tog-sl:before{transform:translateX(15px)}
 </header>
 
 <div class="app" id="main-app" style="display:none">
+<div class="sb-backdrop" id="sbBackdrop" onclick="closeSidebar()"></div>
 <!-- SIDEBAR -->
-<div class="sb">
+<div class="sb" id="sidebar">
   <div class="srch-bar"><div class="srch-w">
     <span class="srch-ic">&#128269;</span>
     <input class="srch-inp" id="srchInp" type="text" placeholder="Search name, SKU, stone&#8230;" oninput="doSearch()">
@@ -1541,6 +1546,14 @@ function renderDash(){
     </div>
     <div class="panel"><div class="panel-h"><span>📍</span><div class="panel-t">Storage Locations</div></div><div class="chips2">${locs}</div></div>`;
 }
+
+// ═══════════════════════════════════════════════════════════════
+// MOBILE SIDEBAR DRAWER
+// ═══════════════════════════════════════════════════════════════
+function toggleSidebar(){const sb=el('sidebar');if(!sb)return;const open=sb.classList.toggle('open');const b=el('sbBackdrop');if(b)b.classList.toggle('open',open);}
+function closeSidebar(){const sb=el('sidebar');if(sb)sb.classList.remove('open');const b=el('sbBackdrop');if(b)b.classList.remove('open');}
+// Close the drawer after tapping a view / quick filter
+document.addEventListener('click',function(e){if(e.target.closest&&e.target.closest('.sb .nav'))closeSidebar();});
 
 // ═══════════════════════════════════════════════════════════════
 // BOOT
