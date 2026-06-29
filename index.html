@@ -282,6 +282,70 @@ input:checked+.tog-sl:before{transform:translateX(15px)}
 .loc-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:18px}
 .lc{background:var(--w);border:1px solid var(--border);border-radius:7px;padding:4px 9px;font-size:11px;color:var(--stone-m)}
 .lc strong{color:var(--gold)}
+/* ===== Dashboard v2 ===== */
+.dh-head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+.dh-title{font-family:'Cormorant Garamond',serif;font-size:30px;color:var(--stone);line-height:1.05}
+.dh-sub{font-size:12px;color:var(--stone-l);margin-top:4px}
+.mcards{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:12px;margin-bottom:14px}
+.mcard{background:var(--w);border:1px solid var(--border);border-radius:16px;padding:15px 16px;box-shadow:var(--sh);cursor:pointer;transition:transform .15s,box-shadow .15s}
+.mcard:hover{transform:translateY(-2px);box-shadow:0 10px 26px rgba(44,40,37,.13)}
+.mcard-top{display:flex;align-items:center;justify-content:space-between}
+.mcard-ic{width:36px;height:36px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:18px;background:var(--gold-p)}
+.mcard-ar{width:27px;height:27px;border-radius:50%;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;color:var(--stone-l);font-size:13px}
+.mcard-l{font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--stone-l);margin-top:13px}
+.mcard-v{font-family:'Cormorant Garamond',serif;font-size:30px;font-weight:600;color:var(--stone);line-height:1;margin-top:4px}
+.mcard-s{font-size:11px;color:var(--stone-l);margin-top:6px}
+.mcard.hero{background:linear-gradient(145deg,#403a33,var(--stone));border:none}
+.mcard.hero .mcard-l,.mcard.hero .mcard-s{color:var(--gold-l)}
+.mcard.hero .mcard-v{color:#fff}
+.mcard.hero .mcard-ic{background:rgba(212,175,122,.18)}
+.mcard.hero .mcard-ar{border-color:rgba(212,175,122,.45);color:var(--gold-l)}
+.mcard.warn{background:var(--amber-l);border-color:rgba(122,79,0,.22)}
+.mcard.warn .mcard-v{color:var(--amber)}
+.mcard.warn .mcard-ic{background:rgba(122,79,0,.13)}
+.dgrid{display:grid;gap:14px;margin-bottom:14px}
+.dgrid.c2{grid-template-columns:1.45fr 1fr}
+.dgrid.even{grid-template-columns:1fr 1fr}
+.panel{background:var(--w);border:1px solid var(--border);border-radius:16px;padding:16px 18px;box-shadow:var(--sh)}
+.panel-h{display:flex;align-items:center;gap:8px;margin-bottom:15px}
+.panel-t{font-family:'Cormorant Garamond',serif;font-size:18px;color:var(--stone)}
+.vbars{display:flex;align-items:flex-end;justify-content:space-between;gap:8px;height:185px}
+.vbar{flex:1;display:flex;flex-direction:column;align-items:center;gap:7px;height:100%}
+.vbar-ct{font-size:14px;font-weight:600;color:var(--stone);font-family:'Cormorant Garamond',serif}
+.vbar-track{width:100%;max-width:48px;background:var(--gold-pp);border-radius:30px;flex:1;display:flex;align-items:flex-end;overflow:hidden}
+.vbar-fill{width:100%;background:linear-gradient(180deg,var(--gold-l),var(--gold));border-radius:30px;min-height:8px;transition:height .5s}
+.vbar-fill.hot{background:linear-gradient(180deg,#4a443c,var(--stone))}
+.vbar-x{font-size:10px;color:var(--stone-l);text-align:center;line-height:1.2}
+.gauge-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;min-height:170px}
+.gleg{display:flex;gap:16px;margin-top:8px;flex-wrap:wrap;justify-content:center}
+.gl{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--stone-m)}
+.gl-d{width:9px;height:9px;border-radius:50%}
+.hbars{display:flex;flex-direction:column;gap:9px}
+.hbar{display:flex;align-items:center;gap:9px}
+.hbar-l{width:120px;font-size:11.5px;color:var(--stone-m);display:flex;align-items:center;gap:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hbar-tr{flex:1;height:9px;background:var(--gold-pp);border-radius:10px;overflow:hidden}
+.hbar-fl{height:100%;border-radius:10px;background:linear-gradient(90deg,var(--gold-l),var(--gold))}
+.hbar-fl.dk{background:linear-gradient(90deg,#8a7f70,var(--stone-m))}
+.hbar-fl.gr{background:linear-gradient(90deg,#3fa06a,var(--green))}
+.hbar-c{width:34px;text-align:right;font-size:11px;font-weight:600;color:var(--stone-m)}
+.todo{display:flex;flex-direction:column;gap:8px}
+.titem{display:flex;align-items:center;gap:11px;padding:11px 12px;border-radius:12px;background:var(--cream);cursor:pointer;transition:background .15s}
+.titem:hover{background:var(--gold-pp)}
+.tic{width:32px;height:32px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.ttx{flex:1;font-size:12.5px;color:var(--stone-m)}
+.ttx b{color:var(--stone)}
+.tct{font-size:17px;font-weight:700;color:var(--stone);font-family:'Cormorant Garamond',serif}
+.arow{display:flex;align-items:center;gap:11px;padding:9px 0;border-bottom:1px solid rgba(184,147,90,.1);cursor:pointer}
+.arow:last-child{border-bottom:none}
+.aic{width:36px;height:36px;border-radius:10px;background:var(--gold-p);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+.am{flex:1;min-width:0}
+.at{font-size:12.5px;color:var(--stone);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.as{font-size:11px;color:var(--stone-l)}
+.chips2{display:flex;flex-wrap:wrap;gap:7px}
+.chip2{display:flex;align-items:center;gap:6px;background:var(--cream);border:1px solid var(--border);border-radius:9px;padding:7px 11px;font-size:11.5px;color:var(--stone-m)}
+.chip2 b{color:var(--stone);font-weight:600}
+.dash-empty{font-size:12px;color:var(--stone-l);padding:18px 0;text-align:center}
+@media(max-width:860px){.dgrid.c2,.dgrid.even{grid-template-columns:1fr}}
 
 /* ── MOVEMENT LOG ── */
 .move-table{width:100%;border-collapse:collapse;background:var(--w);border-radius:12px;overflow:hidden;border:1px solid var(--border);box-shadow:var(--sh);font-size:12px}
@@ -1388,26 +1452,56 @@ function renderDash(){
   const topL=Object.entries(lc).sort((a,b)=>b[1]-a[1]);
   const bar=(lbl,ct,max,col='var(--gold)')=>`<div class="bar-row"><div class="bar-lbl" title="${esc(lbl)}">${esc(lbl)}</div><div class="bar-bg"><div class="bar-fill" style="width:${Math.min(ct/max*100,100).toFixed(0)}%;background:${col}"></div></div><div class="bar-ct">${ct}</div></div>`;
   const showPrice=userRole!=='warehouse';
+  const total=items.length, photographed=items.filter(i=>i.hasPhoto).length, photoPct=total?Math.round(photographed/total*100):0;
+
+  const cards=[
+    {ic:'💎',l:'Total Pieces',v:total,s:av+' available',cls:'hero',on:'goHome()'},
+    showPrice?{ic:'📈',l:'Catalogue Value',v:'₹'+(val/100000).toFixed(1)+'L',s:'available stock',on:'goHome()'}:null,
+    {ic:'✅',l:'Sold',v:sold,s:(showPrice&&salesVal)?'₹'+(salesVal/100000).toFixed(1)+'L total':sold+' pieces',on:"toggleQ('sold')"},
+    {ic:'🏅',l:'Certified',v:cert,s:'gem certificate',on:"toggleQ('certified')"},
+    {ic:'📦',l:'Removed',v:removedCt,s:'damaged / lost',on:"toggleQ('removed')"},
+    {ic:'⚠️',l:'Needs Price',v:noP,s:'no price set',cls:noP>0?'warn':'',on:"toggleQ('no-price')"},
+    {ic:'📷',l:'Needs Photo',v:noPh,s:'photo pending',cls:noPh>0?'warn':'',on:"toggleQ('no-photo')"}
+  ].filter(Boolean);
+  const mcards=cards.map(c=>`<div class="mcard ${c.cls||''}" onclick="${c.on}"><div class="mcard-top"><div class="mcard-ic">${c.ic}</div><div class="mcard-ar">&#8599;</div></div><div class="mcard-l">${c.l}</div><div class="mcard-v">${c.v}</div><div class="mcard-s">${c.s}</div></div>`).join('');
+
+  const szMax=Math.max(...Object.values(sizes),1);
+  const szBars=['Below 4"','4"–6"','7"–9"','10"–12"','13"+'].map(s=>{const c=sizes[s]||0;const h=c?Math.max(8,Math.round(c/szMax*100)):3;const hot=c===szMax&&c>0;return `<div class="vbar"><div class="vbar-ct">${c}</div><div class="vbar-track"><div class="vbar-fill ${hot?'hot':''}" style="height:${h}%"></div></div><div class="vbar-x">${s}</div></div>`;}).join('');
+
+  const ARC=157.08, off=(ARC*(1-photoPct/100)).toFixed(1);
+  const gauge=`<div class="gauge-wrap"><svg viewBox="0 0 120 72" width="200" style="max-width:100%"><path d="M10,62 A50,50 0 0 1 110,62" fill="none" stroke="var(--gold-pp)" stroke-width="13" stroke-linecap="round"/><path d="M10,62 A50,50 0 0 1 110,62" fill="none" stroke="var(--green)" stroke-width="13" stroke-linecap="round" stroke-dasharray="${ARC}" stroke-dashoffset="${off}"/><text x="60" y="52" text-anchor="middle" font-family="'Cormorant Garamond',serif" font-size="27" font-weight="600" fill="var(--stone)">${photoPct}%</text><text x="60" y="66" text-anchor="middle" font-size="8" fill="var(--stone-l)" letter-spacing="0.6">PHOTOGRAPHED</text></svg><div class="gleg"><div class="gl"><span class="gl-d" style="background:var(--green)"></span>Done (${photographed})</div><div class="gl"><span class="gl-d" style="background:var(--gold-pp);border:1px solid var(--border)"></span>Pending (${noPh})</div></div></div>`;
+
+  const hbar=(lbl,c,mx,cls,em)=>`<div class="hbar"><div class="hbar-l" title="${esc(lbl)}">${em?'<span>'+em+'</span> ':''}${esc(lbl)}</div><div class="hbar-tr"><div class="hbar-fl ${cls||''}" style="width:${Math.min(c/mx*100,100).toFixed(0)}%"></div></div><div class="hbar-c">${c}</div></div>`;
+  const stBars=topSt.map(([s,c])=>hbar(s,c,mxSt,'')).join('');
+  const idBars=topId.map(([s,c])=>hbar(s,c,mxId,'dk',getEM(s))).join('');
+
+  const todo=`<div class="todo"><div class="titem" onclick="toggleQ('no-price')"><div class="tic" style="background:var(--amber-l)">⚠️</div><div class="ttx">Pieces that need a <b>price</b></div><div class="tct">${noP}</div></div><div class="titem" onclick="toggleQ('no-photo')"><div class="tic" style="background:var(--blue-l)">📷</div><div class="ttx">Pieces that need a <b>photo</b></div><div class="tct">${noPh}</div></div><div class="titem" onclick="toggleQ('certified')"><div class="tic" style="background:var(--gold-p)">🏅</div><div class="ttx">Certified pieces</div><div class="tct">${cert}</div></div></div>`;
+
+  const sales=recentSales.length?recentSales.map(i=>`<div class="arow" onclick="showDetail(${i.id})"><div class="aic">${getEM(i.name)}</div><div class="am"><div class="at">${esc(i.name)}${i.subcat?' · '+esc(i.subcat):''}</div><div class="as">${esc(i.sku)} · ${esc(i.soldDate||'')}</div></div>${showPrice?`<div style="font-family:'Cormorant Garamond',serif;font-weight:600;color:var(--stone);font-size:14px">${fpF(i.soldPrice)}</div>`:'<span style="font-size:10px;font-weight:600;color:var(--green);background:var(--green-l);padding:3px 9px;border-radius:20px">SOLD</span>'}</div>`).join(''):'<div class="dash-empty">No sales recorded yet.</div>';
+
+  const prB=[['Under ₹10K',0,10000],['₹10K–₹25K',10000,25000],['₹25K–₹1L',25000,100000],['₹1L–₹5L',100000,500000],['₹5L+',500000,Infinity]];
+  const prCounts=prB.map(([l,lo,hi])=>items.filter(i=>i.price&&i.price>=lo&&i.price<hi).length);
+  const prMax=Math.max(...prCounts,1);
+  const prBars=prB.map(([lbl],idx)=>hbar(lbl,prCounts[idx],prMax,'gr')).join('');
+
+  const locs=topL.length?topL.map(([l,c])=>`<div class="chip2">📍 <b>${esc(l)}</b> ${c}</div>`).join(''):'<div class="dash-empty">No locations recorded.</div>';
+
   el('dash-body').innerHTML=`
-    <div class="dash-g">
-      <div class="dc dk"><div class="dc-l">Total Pieces</div><div class="dc-v">${items.length}</div><div class="dc-s">${av} available</div></div>
-      ${showPrice?`<div class="dc"><div class="dc-l">Catalogue Value</div><div class="dc-v">₹${(val/100000).toFixed(1)}L</div><div class="dc-s">available pieces</div></div>`:''}
-      <div class="dc"><div class="dc-l">Certified</div><div class="dc-v">${cert}</div><div class="dc-s">gem certificate</div></div>
-      <div class="dc"><div class="dc-l">Sold</div><div class="dc-v">${sold}</div><div class="dc-s">${showPrice&&salesVal?'₹'+(salesVal/100000).toFixed(1)+'L total':sold+' pieces'}</div></div>
-      <div class="dc"><div class="dc-l">Removed</div><div class="dc-v">${removedCt}</div><div class="dc-s">damaged / lost / gifted</div></div>
-      <div class="dc" style="${noP>0?'border-color:var(--amber)':''}"><div class="dc-l">Needs Price</div><div class="dc-v" style="${noP>0?'color:var(--amber)':''}">${noP}</div><div class="dc-s">no price set</div></div>
-      <div class="dc"><div class="dc-l">Needs Photo</div><div class="dc-v">${noPh}</div><div class="dc-s">photo not done</div></div>
+    <div class="dh-head"><div><div class="dh-title">Dashboard &amp; Reports</div><div class="dh-sub">Your collection at a glance · ${total} pieces</div></div></div>
+    <div class="mcards">${mcards}</div>
+    <div class="dgrid c2">
+      <div class="panel"><div class="panel-h"><span>📏</span><div class="panel-t">Size Distribution</div></div><div class="vbars">${szBars}</div></div>
+      <div class="panel"><div class="panel-h"><span>📷</span><div class="panel-t">Catalogue Readiness</div></div>${gauge}</div>
     </div>
-    <div class="dash-sec">Size Distribution</div>
-    <div class="size-grid">${['Below 4"','4"–6"','7"–9"','10"–12"','13"+'].map(s=>`<div class="size-card"><div class="size-card-v">${sizes[s]||0}</div><div class="size-card-l">${s}</div></div>`).join('')}</div>
-    <div class="chart-row">
-      <div class="chart-box"><div class="dash-sec" style="margin:0 0 10px">Top Gemstones</div><div class="bar-wrap">${topSt.map(([s,c])=>bar(s,c,mxSt)).join('')}</div></div>
-      <div class="chart-box"><div class="dash-sec" style="margin:0 0 10px">Top Idol Types</div><div class="bar-wrap">${topId.map(([s,c])=>bar(s,c,mxId,'var(--stone-m)')).join('')}</div></div>
+    <div class="dgrid even">
+      <div class="panel"><div class="panel-h"><span>💎</span><div class="panel-t">Top Gemstones</div></div><div class="hbars">${stBars}</div></div>
+      <div class="panel"><div class="panel-h"><span>🛕</span><div class="panel-t">Top Idol Types</div></div><div class="hbars">${idBars}</div></div>
     </div>
-    ${showPrice?`<div class="dash-sec">Pricing Breakdown</div><div class="chart-box" style="margin-bottom:18px"><div class="bar-wrap">${[['Under ₹10K',0,10000],['₹10K–₹25K',10000,25000],['₹25K–₹1L',25000,100000],['₹1L–₹5L',100000,500000],['₹5L+',500000,Infinity]].map(([lbl,lo,hi])=>{const ct=items.filter(i=>i.price&&i.price>=lo&&i.price<hi).length;return bar(lbl,ct,Math.max(1,ct),'var(--green)');}).join('')}</div></div>`:''}
-    <div class="dash-sec">Storage Locations</div>
-    <div class="loc-chips">${topL.map(([l,c])=>`<div class="lc"><strong>${esc(l)}</strong> — ${c} pcs</div>`).join('')}</div>
-    ${showPrice&&recentSales.length?`<div class="dash-sec">Recent Sales</div><div class="chart-box" style="padding:0;overflow:hidden;margin-bottom:18px"><table class="dtbl" style="box-shadow:none;border:none"><thead><tr><th>SKU</th><th>Idol</th><th>Sold Price</th><th>Buyer</th><th>Date</th></tr></thead><tbody>${recentSales.map(i=>`<tr onclick="showDetail(${i.id});goDash()"><td class="sku-c">${esc(i.sku)}</td><td>${esc(i.name)}</td><td><strong>${fpF(i.soldPrice)}</strong></td><td style="font-size:11px;color:var(--stone-l)">${esc(i.soldBuyer||'—')}</td><td style="font-size:11px;color:var(--stone-l)">${esc(i.soldDate||'')}</td></tr>`).join('')}</tbody></table></div>`:''}`;
+    <div class="dgrid c2">
+      <div class="panel"><div class="panel-h"><span>📝</span><div class="panel-t">Needs Attention</div></div>${todo}</div>
+      <div class="panel"><div class="panel-h"><span>🧾</span><div class="panel-t">Recent Sales</div></div>${sales}</div>
+    </div>
+    ${showPrice?`<div class="dgrid c2"><div class="panel"><div class="panel-h"><span>💰</span><div class="panel-t">Pricing Breakdown</div></div><div class="hbars">${prBars}</div></div><div class="panel"><div class="panel-h"><span>📍</span><div class="panel-t">Storage Locations</div></div><div class="chips2">${locs}</div></div></div>`:`<div class="panel" style="margin-bottom:14px"><div class="panel-h"><span>📍</span><div class="panel-t">Storage Locations</div></div><div class="chips2">${locs}</div></div>`}`;
 }
 
 // ═══════════════════════════════════════════════════════════════
