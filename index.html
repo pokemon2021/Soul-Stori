@@ -856,7 +856,7 @@ async function upsertItem(item) {
     const res=await sbFetch('soulstori_inventory',{method:'POST',body:JSON.stringify([itemToDbRow(item)]),headers:sbH({'Prefer':'resolution=merge-duplicates,return=minimal'})});
     if(!res.ok) throw new Error(await res.text());
     setSyncStatus('ok','Saved ✓');
-  }catch(e){setSyncStatus('err','Save failed');console.error(e);}
+  }catch(e){setSyncStatus('err','Save failed');console.error(e);alert('⚠️ Could not save to the database — this change may be lost on refresh.\n\nError: '+(e&&e.message?e.message:e)+'\n\nPlease screenshot this and tell Aj.');}
 }
 async function dbDelete(id) {
   setSyncStatus('saving','Deleting…');
@@ -1139,7 +1139,7 @@ async function savePiece(){
   const d={sku,name,loc:el('f-loc').value.trim(),subcat:el('f-sub').value.trim(),category:el('f-cat').value.trim(),stone:el('f-stone').value.trim(),stoneCat:el('f-scat').value,origin:el('f-orig').value.trim(),certified:el('f-cert').checked,certNo:el('f-certno').value.trim(),certBody:el('f-certb').value.trim(),wtCts:pfN('f-wcts'),wtKg:pfN('f-wkg'),ht:htV,width:pfN('f-w'),depth:pfN('f-d'),cost:pfN('f-cost'),listPrice:pfN('f-lp'),price:pfN('f-price'),priceUSD:pfN('f-usd'),por:el('f-por').checked,status:el('f-status').value,hasPhoto:el('f-photo').checked,chWeb:el('f-web').checked,chEtsy:el('f-etsy').checked,chWA:el('f-wa').checked,photoUrl:el('f-photo-url').value.trim(),notes:el('f-notes').value.trim(),sizecat:szcat};
   let savedId=editId;
   if(editId!==null){const idx=items.findIndex(i=>i.id===editId);if(idx>=0)items[idx]=Object.assign({},items[idx],d);}
-  else{const ni=Object.assign({id:Date.now()},d);items.push(ni);savedId=ni.id;}
+  else{const newId=items.reduce((m,i)=>Math.max(m,Number(i.id)||0),0)+1;const ni=Object.assign({id:newId},d);items.push(ni);savedId=ni.id;}
   const item=items.find(i=>i.id===savedId);
   hideMod();fillDropdowns();runFilter();
   if(detId===editId&&editId!==null)showDetail(editId);
