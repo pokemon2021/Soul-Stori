@@ -286,14 +286,16 @@ input:checked+.tog-sl:before{transform:translateX(15px)}
 .dh-head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:18px}
 .dh-title{font-family:'Cormorant Garamond',serif;font-size:30px;color:var(--stone);line-height:1.05}
 .dh-sub{font-size:12px;color:var(--stone-l);margin-top:4px}
-.mcards{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:12px;margin-bottom:14px}
-.mcard{background:var(--w);border:1px solid var(--border);border-radius:16px;padding:15px 16px;box-shadow:var(--sh);cursor:pointer;transition:transform .15s,box-shadow .15s}
+.mcards{display:grid;grid-template-columns:repeat(3,1fr);gap:13px;margin-bottom:14px}
+@media(min-width:1500px){.mcards{grid-template-columns:repeat(6,1fr)}}
+@media(max-width:580px){.mcards{grid-template-columns:repeat(2,1fr)}}
+.mcard{display:flex;flex-direction:column;background:var(--w);border:1px solid var(--border);border-radius:16px;padding:17px 18px 16px;box-shadow:var(--sh);cursor:pointer;transition:transform .15s,box-shadow .15s;min-height:118px}
 .mcard:hover{transform:translateY(-2px);box-shadow:0 10px 26px rgba(44,40,37,.13)}
 .mcard-top{display:flex;align-items:center;justify-content:space-between}
 .mcard-ic{width:36px;height:36px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:18px;background:var(--gold-p)}
 .mcard-ar{width:27px;height:27px;border-radius:50%;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;color:var(--stone-l);font-size:13px}
-.mcard-l{font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--stone-l);margin-top:13px}
-.mcard-v{font-family:'Cormorant Garamond',serif;font-size:30px;font-weight:600;color:var(--stone);line-height:1;margin-top:4px}
+.mcard-l{font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--stone-l);margin-top:auto;padding-top:12px}
+.mcard-v{font-family:'Cormorant Garamond',serif;font-size:33px;font-weight:600;color:var(--stone);line-height:1;margin-top:5px}
 .mcard-s{font-size:11px;color:var(--stone-l);margin-top:6px}
 .mcard.hero{background:linear-gradient(145deg,#403a33,var(--stone));border:none}
 .mcard.hero .mcard-l,.mcard.hero .mcard-s{color:var(--gold-l)}
@@ -1487,13 +1489,12 @@ function renderDash(){
 
   const cards=[
     {ic:'💎',l:'Total Pieces',v:total,s:av+' available',cls:'hero',on:'goHome()'},
-    showPrice?{ic:'📈',l:'Catalogue Value',v:'₹'+(val/100000).toFixed(1)+'L',s:'available stock',on:'goHome()'}:null,
+    showPrice?{ic:'📈',l:'Catalogue Value',v:'₹'+(val/100000).toFixed(1)+'L',s:'available stock',on:'goHome()'}:{ic:'📥',l:'Available',v:av,s:'in stock',on:'goHome()'},
     {ic:'✅',l:'Sold',v:sold,s:(showPrice&&salesVal)?'₹'+(salesVal/100000).toFixed(1)+'L total':sold+' pieces',on:"toggleQ('sold')"},
-    {ic:'🏅',l:'Certified',v:cert,s:'gem certificate',on:"toggleQ('certified')"},
-    {ic:'📦',l:'Removed',v:removedCt,s:'damaged / lost',on:"toggleQ('removed')"},
-    {ic:'⚠️',l:'Needs Price',v:noP,s:'no price set',cls:noP>0?'warn':'',on:"toggleQ('no-price')"},
-    {ic:'📷',l:'Needs Photo',v:noPh,s:'photo pending',cls:noPh>0?'warn':'',on:"toggleQ('no-photo')"}
-  ].filter(Boolean);
+    {ic:'🏅',l:'Certified',v:cert,s:'with certificate',on:"toggleQ('certified')"},
+    {ic:'⚠️',l:'Needs Price',v:noP,s:'awaiting price',cls:noP>0?'warn':'',on:"toggleQ('no-price')"},
+    {ic:'📷',l:'Needs Photo',v:noPh,s:'awaiting photo',cls:noPh>0?'warn':'',on:"toggleQ('no-photo')"}
+  ];
   const mcards=cards.map(c=>`<div class="mcard ${c.cls||''}" onclick="${c.on}"><div class="mcard-top"><div class="mcard-ic">${c.ic}</div><div class="mcard-ar">&#8599;</div></div><div class="mcard-l">${c.l}</div><div class="mcard-v">${c.v}</div><div class="mcard-s">${c.s}</div></div>`).join('');
 
   const szMax=Math.max(...Object.values(sizes),1);
