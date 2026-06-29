@@ -736,6 +736,26 @@ function getToken() {
     return s.access_token || SB_KEY;
   } catch(e) { return SB_KEY; }
 }
+
+// Keep the login session fresh — access tokens expire ~1hr, which would
+// otherwise make saves and photo uploads fail silently.
+async function refreshSession(){
+  try{
+    const s=JSON.parse(localStorage.getItem('ss_session')||'{}');
+    if(!s.refresh_token) return false;
+    const res=await fetch(SB_URL+'/auth/v1/token?grant_type=refresh_token',{
+      method:'POST',headers:{'apikey':SB_KEY,'Content-Type':'application/json'},
+      body:JSON.stringify({refresh_token:s.refresh_token})
+    });
+    if(!res.ok) return false;
+    const d=await res.json();
+    if(!d.access_token) return false;
+    localStorage.setItem('ss_session',JSON.stringify(Object.assign({},s,{access_token:d.access_token,refresh_token:d.refresh_token||s.refresh_token,user:d.user||s.user})));
+    return true;
+  }catch(e){console.warn('Session refresh failed',e);return false;}
+}
+let _refreshTimer=null;
+function startSessionAutoRefresh(){ if(_refreshTimer)clearInterval(_refreshTimer); _refreshTimer=setInterval(refreshSession,45*60*1000); }
 function sbH(extra) {
   return Object.assign({
     'apikey': SB_KEY,
@@ -793,6 +813,7 @@ async function afterLogin(token) {
   el('user-role-badge').className='role-pill role-'+userRole;
   el('user-email-disp').textContent=currentUser.email;
   applyRolePermissions();
+  startSessionAutoRefresh();
   setProgress(25,'Loading inventory…');
   await loadFromDB();
 }
@@ -807,8 +828,15 @@ async function checkSession() {
     const s=JSON.parse(localStorage.getItem('ss_session')||'{}');
     if(!s.access_token){ el('auth-screen').style.display='flex'; return; }
     // Verify token still valid
-    const res=await fetch(SB_URL+'/auth/v1/user',{headers:{'apikey':SB_KEY,'Authorization':'Bearer '+s.access_token}});
-    if(!res.ok){ el('auth-screen').style.display='flex'; return; }
+    let res=await fetch(SB_URL+'/auth/v1/user',{headers:{'apikey':SB_KEY,'Authorization':'Bearer '+s.access_token}});
+    if(!res.ok){
+      // Token likely expired — try refreshing before forcing a re-login
+      if(await refreshSession()){
+        const s2=JSON.parse(localStorage.getItem('ss_session')||'{}');
+        currentUser=s2.user; await afterLogin(s2.access_token); return;
+      }
+      el('auth-screen').style.display='flex'; return;
+    }
     currentUser=s.user;
     await afterLogin(s.access_token);
   } catch(e){ el('auth-screen').style.display='flex'; }
@@ -1271,18 +1299,24 @@ async function handlePhotoPick(input){
     const sku=(el('f-sku').value.trim()||'item').replace(/[^a-zA-Z0-9_-]/g,'');
     const fname=sku+'-'+Date.now()+'.jpg';
     st.textContent='Uploading…';
-    const res=await fetch(SB_URL+'/storage/v1/object/SoulStori-photos/'+encodeURIComponent(fname),{
+    const doUpload=()=>fetch(SB_URL+'/storage/v1/object/SoulStori-photos/'+encodeURIComponent(fname),{
       method:'POST',
       headers:{'apikey':SB_KEY,'Authorization':'Bearer '+getToken(),'Content-Type':'image/jpeg','x-upsert':'true'},
       body:blob
     });
-    if(!res.ok)throw new Error(await res.text());
+    let res=await doUpload();
+    if(!res.ok&&(res.status===401||res.status===403)){ if(await refreshSession()) res=await doUpload(); }
+    if(!res.ok){
+      const txt=await res.text();
+      const hint=(res.status===401||/jwt|expired/i.test(txt))?'Your login session expired — please log out and back in.':(res.status===403||/policy|row-level/i.test(txt))?'Permission denied — the storage upload rule may be missing.':(txt||('HTTP '+res.status));
+      throw new Error(hint);
+    }
     el('f-photo-url').value=fname;el('f-photo').checked=true;
     st.style.color='var(--green)';st.textContent='Photo uploaded ✓';
     refreshPhotoPreview();
   }catch(e){
     console.error('Photo upload failed',e);
-    st.style.color='var(--red)';st.textContent='Upload failed — please try again.';
+    st.style.color='var(--red)';st.textContent='Upload failed: '+(e&&e.message?e.message:e);
   }finally{up.disabled=false;input.value='';}
 }
 // Shrink large photos to max ~1400px and compress to JPEG before upload
