@@ -6,6 +6,7 @@
 <title>SoulStori — Inventory System</title>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
 <style>
 :root{--gold:#B8935A;--gold-l:#D4AF7A;--gold-p:#F5EDD8;--gold-pp:#FDF8F0;--stone:#2C2825;--stone-m:#5A544E;--stone-l:#9A8F85;--cream:#FAF7F2;--w:#fff;--green:#1A6640;--green-l:#D1EDD9;--red:#8B2020;--red-l:#FDEAEA;--amber:#7A4F00;--amber-l:#FFF3CD;--blue:#1A4A8A;--blue-l:#E6EEFA;--border:rgba(184,147,90,0.18);--sh:0 2px 16px rgba(44,40,37,.07)}
 *{box-sizing:border-box;margin:0;padding:0}
@@ -536,10 +537,20 @@ input:checked+.tog-sl:before{transform:translateX(15px)}
     <div class="scan-bar">
       <span style="font-size:12px;color:rgba(255,255,255,.7);flex-shrink:0">Scan QR or type SKU:</span>
       <input class="scan-inp" id="scan-inp" placeholder="e.g. 2GA0004 &#8230; press Enter" onkeydown="if(event.key==='Enter')doScan()">
+      <button class="btn btn-blue" onclick="startCameraScan()" style="flex-shrink:0">&#128247; Camera</button>
       <button class="btn btn-gold" onclick="doScan()" style="flex-shrink:0">Check &#8594;</button>
     </div>
+    <div id="cam-box" class="hidden" style="padding:16px 18px 0;text-align:center">
+      <div style="max-width:340px;margin:0 auto;background:#000;border-radius:14px;overflow:hidden;position:relative">
+        <video id="cam-video" playsinline muted style="width:100%;display:block"></video>
+        <div style="position:absolute;inset:16%;border:3px solid rgba(255,255,255,.65);border-radius:12px;pointer-events:none"></div>
+      </div>
+      <canvas id="cam-canvas" style="display:none"></canvas>
+      <div id="cam-status" style="font-size:12px;color:var(--stone-m);margin-top:10px"></div>
+      <button class="btn" onclick="stopCameraScan()" style="margin-top:8px">&#10005; Stop camera</button>
+    </div>
     <div id="scan-result-area" style="padding:16px 18px">
-      <div class="empty"><div class="empty-ic">&#128247;</div><div class="empty-t">Ready to scan</div><p style="font-size:12px;color:var(--stone-l);margin-top:4px">Type or scan any SKU above.<br>Works with any QR scanner or barcode reader connected to your device.</p></div>
+      <div class="empty"><div class="empty-ic">&#128247;</div><div class="empty-t">Ready to scan</div><p style="font-size:12px;color:var(--stone-l);margin-top:4px">Tap <b>&#128247; Camera</b> to scan a label with your phone, or type a SKU above.</p></div>
     </div>
   </div>
 
@@ -1081,7 +1092,7 @@ function setC(id,val){el(id).checked=!!val;}
 // ═══════════════════════════════════════════════════════════════
 // VIEWS
 // ═══════════════════════════════════════════════════════════════
-function showOnly(v){['inv','scan','dash','move','fin'].forEach(x=>el('view-'+x).classList.toggle('hidden',x!==v));}
+function showOnly(v){if(v!=='scan')stopCameraScan();['inv','scan','dash','move','fin'].forEach(x=>el('view-'+x).classList.toggle('hidden',x!==v));}
 function setNav(id){document.querySelectorAll('.nav').forEach(n=>n.classList.remove('active'));const e=el(id);if(e)e.classList.add('active');}
 function goHome(){QF=null;SC=null;SD=1;catModeOn=false;el('srchInp').value='';el('srchX').classList.add('hidden');['fIdol','fStone','fSize','fLoc','fStatus'].forEach(id=>el(id).value='');showOnly('inv');setNav('nav-inv');el('grid-c').classList.remove('cat-mode');el('cat-mode-bar').classList.add('hidden');el('btn-cat-mode').classList.remove('hidden');runFilter();}
 function goScan(){showOnly('scan');setNav('nav-scan');setTimeout(()=>el('scan-inp').focus(),50);}
@@ -1093,6 +1104,50 @@ function toggleQ(f){if(QF===f){goHome();return;}QF=f;showOnly('inv');const m={'n
 // ═══════════════════════════════════════════════════════════════
 // QUICK SCAN MODE
 // ═══════════════════════════════════════════════════════════════
+let qrStream=null, qrRAF=null;
+async function startCameraScan(){
+  const box=el('cam-box'); if(box) box.classList.remove('hidden');
+  const status=el('cam-status'), video=el('cam-video');
+  if(typeof jsQR==='undefined'){ if(status) status.textContent='QR reader still loading — wait a moment and tap Camera again.'; return; }
+  if(status) status.textContent='Starting camera…';
+  try{
+    qrStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
+    video.srcObject=qrStream; video.setAttribute('playsinline','true'); await video.play();
+    if(status) status.textContent='Point the camera at the label’s QR code';
+    qrRAF=requestAnimationFrame(qrScanLoop);
+  }catch(e){ if(status) status.textContent='Could not open the camera — please allow camera access and try again.'; console.warn('camera',e); }
+}
+function qrScanLoop(){
+  if(!qrStream) return;
+  const video=el('cam-video'), canvas=el('cam-canvas');
+  if(video && video.readyState===4 && video.videoWidth){
+    const w=video.videoWidth, h=video.videoHeight;
+    canvas.width=w; canvas.height=h;
+    const ctx=canvas.getContext('2d'); ctx.drawImage(video,0,0,w,h);
+    let code=null;
+    try{ const img=ctx.getImageData(0,0,w,h); code=jsQR(img.data,w,h,{inversionAttempts:'dontInvert'}); }catch(_){}
+    if(code && code.data){
+      const sku=skuFromScan(code.data);
+      stopCameraScan();
+      el('scan-inp').value=sku; doScan();
+      return;
+    }
+  }
+  qrRAF=requestAnimationFrame(qrScanLoop);
+}
+function stopCameraScan(){
+  if(qrRAF){ cancelAnimationFrame(qrRAF); qrRAF=null; }
+  if(qrStream){ try{ qrStream.getTracks().forEach(t=>t.stop()); }catch(_){} qrStream=null; }
+  const v=el('cam-video'); if(v) v.srcObject=null;
+  const box=el('cam-box'); if(box) box.classList.add('hidden');
+}
+function skuFromScan(text){
+  text=(text||'').trim();
+  const m=text.match(/[?&]sku=([^&#]+)/i);
+  if(m){ try{ return decodeURIComponent(m[1]); }catch(_){ return m[1]; } }
+  if(text.indexOf('|')>=0){ const p=text.split('|'); return (p[0].toUpperCase()==='SS'&&p[1])?p[1]:p[0]; }
+  return text;
+}
 function doScan() {
   const sku=el('scan-inp').value.trim().toUpperCase().replace(/\s/g,'');
   if(!sku) return;
