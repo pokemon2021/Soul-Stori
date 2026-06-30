@@ -378,6 +378,12 @@ input:checked+.tog-sl:before{transform:translateX(15px)}
 .rank-n{width:18px;font-family:'Cormorant Garamond',serif;font-size:15px;color:var(--gold);font-weight:600}
 .rank-nm{flex:1;font-size:12.5px;color:var(--stone);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .rank-c{font-family:'Cormorant Garamond',serif;font-size:19px;font-weight:600;color:var(--stone)}
+.cust-card{background:var(--w);border:1px solid var(--border);border-radius:14px;box-shadow:var(--sh);padding:13px 16px;margin-bottom:10px}
+.cust-card summary{display:flex;align-items:center;gap:12px;cursor:pointer;list-style:none}
+.cust-card summary::-webkit-details-marker{display:none}
+.cust-name{font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:600;color:var(--stone)}
+.cust-meta{font-size:11.5px;color:var(--stone-l);margin-top:2px}
+.cust-total{font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:600;color:var(--stone);flex-shrink:0}
 @media(max-width:980px){.dgrid.c3{grid-template-columns:1fr 1fr}}
 @media(max-width:680px){.dgrid.c3{grid-template-columns:1fr}.rd-row{gap:14px}}
 
@@ -483,6 +489,7 @@ input:checked+.tog-sl:before{transform:translateX(15px)}
   <div class="nav" id="nav-dash" onclick="goDash()"><span class="nav-ic">&#128202;</span>Dashboard</div>
   <div class="nav" id="nav-move" onclick="goMoves()"><span class="nav-ic">&#128260;</span>Movement Log</div>
   <div class="nav" id="nav-fin" onclick="goFin()"><span class="nav-ic">&#128200;</span>Profit &amp; Loss</div>
+  <div class="nav" id="nav-cust" onclick="goCust()"><span class="nav-ic">&#128100;</span>Customers</div>
   <div class="sb-sec">Quick Filters</div>
   <div class="nav" id="nav-np" onclick="toggleQ('no-price')"><span class="nav-ic">&#9888;&#65039;</span>No Price<span class="nc" id="nc-np">0</span></div>
   <div class="nav" id="nav-nph" onclick="toggleQ('no-photo')"><span class="nav-ic">&#128247;</span>Needs Photo<span class="nc" id="nc-nph">0</span></div>
@@ -573,6 +580,10 @@ input:checked+.tog-sl:before{transform:translateX(15px)}
   <div id="view-fin" class="hidden">
     <div class="toolbar"><div class="tb-title">Profit &amp; Loss</div><div class="tb-r"><button class="btn" onclick="renderFin()">&#8635; Refresh</button><button class="btn" onclick="exportFin()">&#11015; Export CSV</button></div></div>
     <div class="dash" id="fin-body"></div>
+  </div>
+  <div id="view-cust" class="hidden">
+    <div class="toolbar"><div class="tb-title">&#128100; Customers</div><div class="tb-r"><input class="finput" id="cust-search" placeholder="Search customer&#8230;" oninput="renderCust()" style="max-width:220px;font-size:13px"></div></div>
+    <div class="dash" id="cust-body"></div>
   </div>
 </div>
 </div>
@@ -676,6 +687,7 @@ input:checked+.tog-sl:before{transform:translateX(15px)}
       <div class="fgroup full" style="margin-bottom:12px"><label class="flabel">Sold Price &mdash; actual (&#8377;)</label><input class="finput" id="sell-price" type="number" placeholder="Optional — you can enter this later on Profit &amp; Loss"></div>
       <div class="fgroup full" style="margin-bottom:12px"><label class="flabel">Sale Date</label><input class="finput" id="sell-date" type="date"></div>
       <div class="fgroup full" style="margin-bottom:12px"><label class="flabel">Buyer / Channel (optional)</label><input class="finput" id="sell-buyer" placeholder="Buyer name, WhatsApp, store&#8230;"></div>
+      <div class="fgroup full" style="margin-bottom:12px"><label class="flabel">Phone / WhatsApp (optional)</label><input class="finput" id="sell-phone" placeholder="Contact number"></div>
       <div class="fgroup full"><label class="flabel">Notes (optional)</label><textarea class="finput ftarea" id="sell-note" placeholder="Payment method, special instructions&#8230;" style="min-height:55px"></textarea></div>
     </div>
     <div class="mod-ft"><button class="btn" onclick="hideSellMod()">Cancel</button><button class="btn btn-sell" onclick="confirmSell()">&#128176; Confirm Sale</button></div>
@@ -897,6 +909,7 @@ function applyRolePermissions() {
   if(el('btn-add-stock')) el('btn-add-stock').style.display=isAdmin?'':'none';
   // Profit & Loss is financial — admins / accounts only
   if(el('nav-fin')) el('nav-fin').style.display=(isAdmin||isAccounts)?'':'none';
+  if(el('nav-cust')) el('nav-cust').style.display=(isAdmin||isAccounts)?'':'none';
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1027,8 +1040,8 @@ async function dbDelete(id) {
   }catch(e){setSyncStatus('err','Delete failed');console.error(e);}
 }
 
-function dbRowToItem(r){return{id:r.id,sku:r.sku||'',loc:r.loc||'',name:r.name||'',subcat:r.subcat||'',category:r.category||'',stone:r.stone||'',stoneCat:r.stone_cat||'',origin:r.origin||'',wtCts:r.wt_cts,wtKg:r.wt_kg,ht:r.ht,width:r.width,depth:r.depth,price:r.price,listPrice:r.list_price,priceUSD:r.price_usd,cost:r.cost,por:!!r.por,certified:!!r.certified,certNo:r.cert_no||'',certBody:r.cert_body||'',hasPhoto:!!r.has_photo,photoUrl:r.photo_url||'',status:r.status||'available',sizecat:r.sizecat||'',chWeb:!!r.ch_web,chEtsy:!!r.ch_etsy,chWA:!!r.ch_wa,notes:r.notes||'',soldPrice:r.sold_price,soldDate:r.sold_date,soldBuyer:r.sold_buyer||'',quotedPrice:r.quoted_price,reservedFor:r.reserved_for||'',reservedUntil:r.reserved_until,removedReason:r.removed_reason||'',removedDate:r.removed_date};}
-function itemToDbRow(item){return{id:item.id,sku:item.sku,loc:item.loc,name:item.name,subcat:item.subcat,category:item.category,stone:item.stone,stone_cat:item.stoneCat,origin:item.origin,wt_cts:item.wtCts||null,wt_kg:item.wtKg||null,ht:item.ht||null,width:item.width||null,depth:item.depth||null,price:item.price||null,list_price:item.listPrice||null,price_usd:item.priceUSD||null,cost:item.cost||null,por:!!item.por,certified:!!item.certified,cert_no:item.certNo||null,cert_body:item.certBody||null,has_photo:!!item.hasPhoto,photo_url:item.photoUrl||null,status:item.status||'available',sizecat:item.sizecat||null,ch_web:!!item.chWeb,ch_etsy:!!item.chEtsy,ch_wa:!!item.chWA,notes:item.notes||null,sold_price:item.soldPrice||null,sold_date:item.soldDate||null,sold_buyer:item.soldBuyer||null,quoted_price:item.quotedPrice||null,reserved_for:item.reservedFor||null,reserved_until:item.reservedUntil||null,removed_reason:item.removedReason||null,removed_date:item.removedDate||null};}
+function dbRowToItem(r){return{id:r.id,sku:r.sku||'',loc:r.loc||'',name:r.name||'',subcat:r.subcat||'',category:r.category||'',stone:r.stone||'',stoneCat:r.stone_cat||'',origin:r.origin||'',wtCts:r.wt_cts,wtKg:r.wt_kg,ht:r.ht,width:r.width,depth:r.depth,price:r.price,listPrice:r.list_price,priceUSD:r.price_usd,cost:r.cost,por:!!r.por,certified:!!r.certified,certNo:r.cert_no||'',certBody:r.cert_body||'',hasPhoto:!!r.has_photo,photoUrl:r.photo_url||'',status:r.status||'available',sizecat:r.sizecat||'',chWeb:!!r.ch_web,chEtsy:!!r.ch_etsy,chWA:!!r.ch_wa,notes:r.notes||'',soldPrice:r.sold_price,soldDate:r.sold_date,soldBuyer:r.sold_buyer||'',buyerPhone:r.buyer_phone||'',quotedPrice:r.quoted_price,reservedFor:r.reserved_for||'',reservedUntil:r.reserved_until,removedReason:r.removed_reason||'',removedDate:r.removed_date};}
+function itemToDbRow(item){return{id:item.id,sku:item.sku,loc:item.loc,name:item.name,subcat:item.subcat,category:item.category,stone:item.stone,stone_cat:item.stoneCat,origin:item.origin,wt_cts:item.wtCts||null,wt_kg:item.wtKg||null,ht:item.ht||null,width:item.width||null,depth:item.depth||null,price:item.price||null,list_price:item.listPrice||null,price_usd:item.priceUSD||null,cost:item.cost||null,por:!!item.por,certified:!!item.certified,cert_no:item.certNo||null,cert_body:item.certBody||null,has_photo:!!item.hasPhoto,photo_url:item.photoUrl||null,status:item.status||'available',sizecat:item.sizecat||null,ch_web:!!item.chWeb,ch_etsy:!!item.chEtsy,ch_wa:!!item.chWA,notes:item.notes||null,sold_price:item.soldPrice||null,sold_date:item.soldDate||null,sold_buyer:item.soldBuyer||null,buyer_phone:item.buyerPhone||null,quoted_price:item.quotedPrice||null,reserved_for:item.reservedFor||null,reserved_until:item.reservedUntil||null,removed_reason:item.removedReason||null,removed_date:item.removedDate||null};}
 
 // ── MOVEMENT LOG ───────────────────────────────────────────────
 async function logMove(sku, itemName, action, notes) {
@@ -1106,13 +1119,41 @@ function setC(id,val){el(id).checked=!!val;}
 // ═══════════════════════════════════════════════════════════════
 // VIEWS
 // ═══════════════════════════════════════════════════════════════
-function showOnly(v){if(v!=='scan')stopCameraScan();['inv','scan','dash','move','fin'].forEach(x=>el('view-'+x).classList.toggle('hidden',x!==v));}
+function showOnly(v){if(v!=='scan')stopCameraScan();['inv','scan','dash','move','fin','cust'].forEach(x=>el('view-'+x).classList.toggle('hidden',x!==v));}
 function setNav(id){document.querySelectorAll('.nav').forEach(n=>n.classList.remove('active'));const e=el(id);if(e)e.classList.add('active');}
 function goHome(){QF=null;SC=null;SD=1;catModeOn=false;el('srchInp').value='';el('srchX').classList.add('hidden');['fIdol','fStone','fSize','fLoc','fStatus'].forEach(id=>el(id).value='');showOnly('inv');setNav('nav-inv');el('grid-c').classList.remove('cat-mode');el('cat-mode-bar').classList.add('hidden');el('btn-cat-mode').classList.remove('hidden');runFilter();}
 function goScan(){showOnly('scan');setNav('nav-scan');setTimeout(()=>el('scan-inp').focus(),50);}
 function goDash(){QF=null;showOnly('dash');setNav('nav-dash');runFilter();renderDash();}
 function goMoves(){showOnly('move');setNav('nav-move');loadMoves();}
 function goFin(){if(userRole==='warehouse'){alert('Profit & Loss is for admins / accounts only.');return;}QF=null;showOnly('fin');setNav('nav-fin');renderFin();}
+function goCust(){if(userRole==='warehouse'){alert('Customers is for admins / accounts only.');return;}QF=null;showOnly('cust');setNav('nav-cust');renderCust();}
+function renderCust(){
+  const sold=items.filter(i=>i.status==='sold');
+  const n=v=>(typeof v==='number'&&!isNaN(v))?v:0;
+  const money=v=>'₹'+Math.round(n(v)).toLocaleString('en-IN');
+  const groups={};
+  sold.forEach(i=>{
+    const name=(i.soldBuyer||'').trim()||'Unspecified';
+    const key=name.toLowerCase();
+    if(!groups[key]) groups[key]={name,phone:'',pieces:[],total:0,last:''};
+    const g=groups[key]; g.pieces.push(i); g.total+=n(i.soldPrice);
+    if(i.soldDate&&i.soldDate>g.last) g.last=i.soldDate;
+    if(i.buyerPhone) g.phone=i.buyerPhone;
+  });
+  let list=Object.values(groups).sort((a,b)=>b.total-a.total);
+  const totalCust=list.length, totalSales=list.reduce((s,g)=>s+g.total,0), top=list[0];
+  const q=((el('cust-search')&&el('cust-search').value)||'').trim().toLowerCase();
+  if(q) list=list.filter(g=>g.name.toLowerCase().includes(q)||(g.phone||'').toLowerCase().includes(q));
+  const tile=(l,v)=>`<div class="snap-t"><div class="snap-l">${l}</div><div class="snap-v">${v}</div></div>`;
+  const cards=list.length?list.map(g=>{
+    const rows=g.pieces.slice().sort((a,b)=>(b.soldDate||'').localeCompare(a.soldDate||'')).map(i=>`<tr onclick="showDetail(${i.id})"><td class="sku-c">${esc(i.sku)}</td><td>${esc(i.name)}</td><td>${i.soldPrice?money(i.soldPrice):'—'}</td><td style="color:var(--stone-l)">${esc(i.soldDate||'')}</td></tr>`).join('');
+    return `<details class="cust-card"><summary><div style="flex:1;min-width:0"><div class="cust-name">${esc(g.name)}</div><div class="cust-meta">${g.phone?'📞 '+esc(g.phone)+' · ':''}${g.pieces.length} piece${g.pieces.length!==1?'s':''} · last ${esc(g.last||'—')}</div></div><div class="cust-total">${money(g.total)}</div></summary><table class="dtbl" style="margin-top:10px"><thead><tr><th>SKU</th><th>Idol</th><th>Sold For</th><th>Date</th></tr></thead><tbody>${rows}</tbody></table></details>`;
+  }).join(''):'<div class="dash-empty">No customers yet. They appear here once you record sales with a buyer name.</div>';
+  el('cust-body').innerHTML=`
+    <div class="dh-head"><div><div class="dh-title">Customers</div><div class="dh-sub">${totalCust} customer${totalCust!==1?'s':''} · ${money(totalSales)} total sales</div></div></div>
+    <div class="snap" style="margin-bottom:16px">${tile('Customers',totalCust)}${tile('Total Sales',money(totalSales))}${tile('Top Customer',top?esc(top.name):'—')}</div>
+    ${cards}`;
+}
 function toggleQ(f){if(QF===f){goHome();return;}QF=f;showOnly('inv');const m={'no-price':'nav-np','no-photo':'nav-nph','certified':'nav-ce','sold':'nav-sold','removed':'nav-removed'};setNav(m[f]||'nav-inv');runFilter();}
 
 // ═══════════════════════════════════════════════════════════════
@@ -1420,14 +1461,14 @@ function shrinkImage(file){
 // ═══════════════════════════════════════════════════════════════
 // SELL / REMOVE WORKFLOW
 // ═══════════════════════════════════════════════════════════════
-function openSellMod(id){const item=items.find(i=>i.id===id);if(!item)return;sellId=id;el('sell-summary').innerHTML=`<strong>${esc(item.sku)}</strong> — ${esc(item.name)}${item.stone?' · '+esc(item.stone):''}`;setV('sell-price',item.price||'');setV('sell-quoted',item.price||'');el('sell-date').value=new Date().toISOString().slice(0,10);setV('sell-buyer','');setV('sell-note','');el('sellModOv').classList.remove('hidden');}
+function openSellMod(id){const item=items.find(i=>i.id===id);if(!item)return;sellId=id;el('sell-summary').innerHTML=`<strong>${esc(item.sku)}</strong> — ${esc(item.name)}${item.stone?' · '+esc(item.stone):''}`;setV('sell-price',item.price||'');setV('sell-quoted',item.price||'');el('sell-date').value=new Date().toISOString().slice(0,10);setV('sell-buyer','');setV('sell-phone','');setV('sell-note','');el('sellModOv').classList.remove('hidden');}
 function hideSellMod(){el('sellModOv').classList.add('hidden');sellId=null;}
 async function confirmSell(){
   const item=items.find(i=>i.id===sellId);if(!item)return;
   const price=pfN('sell-price'); // optional — can be filled in later on the Profit & Loss page
   const date=el('sell-date').value||new Date().toISOString().slice(0,10);
   const buyer=el('sell-buyer').value.trim(),note=el('sell-note').value.trim();
-  item.status='sold';item.soldPrice=price;item.soldDate=date;item.soldBuyer=buyer;item.quotedPrice=pfN('sell-quoted');
+  item.status='sold';item.soldPrice=price;item.soldDate=date;item.soldBuyer=buyer;item.buyerPhone=el('sell-phone').value.trim();item.quotedPrice=pfN('sell-quoted');
   if(note)item.notes=(item.notes?item.notes+'\n':'')+`[SOLD ${date}] ${note}`;
   const sid=sellId;hideSellMod();runFilter();if(detId===sid)showDetail(sid);
   await upsertItem(item);
