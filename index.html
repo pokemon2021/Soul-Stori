@@ -14,6 +14,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--stone)
 /* ── AUTH SCREEN ── */
 #auth-screen{position:fixed;inset:0;background:var(--stone);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px}
 .auth-box{background:var(--w);border-radius:18px;padding:36px;max-width:440px;width:100%;box-shadow:0 24px 64px rgba(0,0,0,.45)}
+#mfa-qr svg{width:185px;height:185px;display:block}
 .auth-logo{font-family:'Cormorant Garamond',serif;font-size:28px;color:var(--stone);letter-spacing:.1em;margin-bottom:3px}
 .auth-logo em{color:var(--gold);font-style:italic}
 .auth-tag{font-size:9px;color:var(--stone-l);letter-spacing:.18em;text-transform:uppercase;margin-bottom:28px}
@@ -425,11 +426,31 @@ input:checked+.tog-sl:before{transform:translateX(15px)}
   <div class="auth-box">
     <div class="auth-logo">Soul<em>Stori</em></div>
     <div class="auth-tag">Where Faith Meets Artistry</div>
+    <div id="login-fields">
     <div class="auth-title">Sign in to your team workspace</div>
     <div class="auth-field"><label class="auth-label">Email</label><input class="auth-input" id="auth-email" type="email" placeholder="you@example.com" autocomplete="email"></div>
     <div class="auth-field"><label class="auth-label">Password</label><input class="auth-input" id="auth-pass" type="password" placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"></div>
     <div class="auth-err" id="auth-err"></div>
     <button class="auth-btn" onclick="doLogin()" id="auth-btn">Sign In &#8594;</button>
+    </div>
+    <div id="mfa-enroll" class="hidden">
+      <div class="auth-title">Set up two-factor authentication</div>
+      <p style="font-size:12.5px;color:var(--stone-m);line-height:1.5;margin-bottom:12px">Scan this QR code with <b>Google Authenticator</b> (or Authy), then enter the 6-digit code it shows.</p>
+      <div id="mfa-qr" style="background:#fff;border:1px solid var(--border);border-radius:10px;padding:10px;display:inline-block"></div>
+      <div style="font-size:10.5px;color:var(--stone-l);margin-top:8px;word-break:break-all">Can&#8217;t scan? Enter this key in the app: <b id="mfa-secret"></b></div>
+      <div class="auth-field" style="margin-top:14px"><label class="auth-label">6-digit code</label><input class="auth-input" id="mfa-enroll-code" inputmode="numeric" maxlength="6" placeholder="123456" autocomplete="one-time-code" onkeydown="if(event.key==='Enter')verifyMfaEnroll()"></div>
+      <div class="auth-err" id="mfa-enroll-err"></div>
+      <button class="auth-btn" onclick="verifyMfaEnroll()" id="mfa-enroll-btn">Verify &amp; finish &#8594;</button>
+      <div style="text-align:center;margin-top:10px"><a href="#" onclick="cancelMfa();return false" style="font-size:11px;color:var(--stone-l)">&#8592; Back to sign in</a></div>
+    </div>
+    <div id="mfa-challenge" class="hidden">
+      <div class="auth-title">Two-factor verification</div>
+      <p style="font-size:12.5px;color:var(--stone-m);line-height:1.5;margin-bottom:12px">Enter the 6-digit code from your authenticator app.</p>
+      <div class="auth-field"><label class="auth-label">6-digit code</label><input class="auth-input" id="mfa-code" inputmode="numeric" maxlength="6" placeholder="123456" autocomplete="one-time-code" onkeydown="if(event.key==='Enter')verifyMfaChallenge()"></div>
+      <div class="auth-err" id="mfa-err"></div>
+      <button class="auth-btn" onclick="verifyMfaChallenge()" id="mfa-btn">Verify &#8594;</button>
+      <div style="text-align:center;margin-top:10px"><a href="#" onclick="cancelMfa();return false" style="font-size:11px;color:var(--stone-l)">&#8592; Back to sign in</a></div>
+    </div>
     <div class="auth-foot">
       &#128274; Private team workspace &nbsp;·&nbsp; Contact your admin to get access<br>
       <span id="cfg-status" style="margin-top:6px;display:block;font-size:10px;color:rgba(255,255,255,.3)"></span>
@@ -785,11 +806,17 @@ function el(id){ return document.getElementById(id); }
 // ═══════════════════════════════════════════════════════════════
 // AUTH — Supabase Auth with roles
 // ═══════════════════════════════════════════════════════════════
+// ── TWO-FACTOR AUTH (TOTP authenticator app) ──────────────────
+let mfaTmpToken=null, mfaFactorId=null, mfaChallengeId=null, mfaFactors=[];
+function mfaH(){ return {'apikey':SB_KEY,'Authorization':'Bearer '+mfaTmpToken,'Content-Type':'application/json'}; }
+function mfaErr(id,msg){ const e=el(id); if(e){ e.textContent=msg; e.style.display='block'; } }
+function cancelMfa(){ mfaTmpToken=null; el('mfa-enroll').classList.add('hidden'); el('mfa-challenge').classList.add('hidden'); el('login-fields').classList.remove('hidden'); }
+
 async function doLogin() {
   const email=el('auth-email').value.trim(), pass=el('auth-pass').value;
   if(!email||!pass){ showAuthErr('Please enter your email and password.'); return; }
   if(!SB_URL||!SB_KEY){ showAuthErr('Supabase is not configured. Ask your admin to set up the app.'); return; }
-  el('auth-btn').textContent='Signing in…'; el('auth-btn').disabled=true;
+  el('auth-btn').textContent='Signing in…'; el('auth-btn').disabled=true; el('auth-err').style.display='none';
   try {
     const res=await fetch(SB_URL+'/auth/v1/token?grant_type=password',{
       method:'POST', headers:{'apikey':SB_KEY,'Content-Type':'application/json'},
@@ -797,9 +824,70 @@ async function doLogin() {
     });
     const d=await res.json();
     if(!res.ok) throw new Error(d.error_description||d.msg||'Login failed');
-    currentUser=d.user; localStorage.setItem('ss_session',JSON.stringify({access_token:d.access_token,refresh_token:d.refresh_token,user:d.user}));
-    await afterLogin(d.access_token);
+    currentUser=d.user; mfaTmpToken=d.access_token;
+    let factors=(d.user&&d.user.factors)||[];
+    try{ const ur=await fetch(SB_URL+'/auth/v1/user',{headers:{'apikey':SB_KEY,'Authorization':'Bearer '+d.access_token}}); if(ur.ok){const ud=await ur.json(); if(ud&&ud.factors) factors=ud.factors;} }catch(_){}
+    mfaFactors=factors;
+    el('auth-btn').textContent='Sign In →'; el('auth-btn').disabled=false;
+    const verified=factors.find(f=>f.factor_type==='totp'&&f.status==='verified');
+    if(verified) await beginMfaChallenge(verified.id);   // ask for the 6-digit code
+    else await beginMfaEnroll();                          // 2FA required for everyone — set it up now
   } catch(e){ showAuthErr(e.message); el('auth-btn').textContent='Sign In →'; el('auth-btn').disabled=false; }
+}
+
+async function beginMfaEnroll(){
+  el('login-fields').classList.add('hidden'); el('mfa-challenge').classList.add('hidden'); el('mfa-enroll').classList.remove('hidden');
+  el('mfa-enroll-err').style.display='none'; el('mfa-qr').innerHTML='<div style="color:#555;font-size:12px;padding:24px">Generating…</div>'; el('mfa-secret').textContent='';
+  try{
+    for(const f of (mfaFactors||[])){ if(f.factor_type==='totp'&&f.status!=='verified'){ try{ await fetch(SB_URL+'/auth/v1/factors/'+f.id,{method:'DELETE',headers:mfaH()}); }catch(_){} } }
+    const res=await fetch(SB_URL+'/auth/v1/factors',{method:'POST',headers:mfaH(),body:JSON.stringify({factor_type:'totp',friendly_name:'SoulStori-'+Date.now()})});
+    const d=await res.json();
+    if(!res.ok) throw new Error(d.error_description||d.msg||d.message||'Could not start 2FA setup. Ask your admin to enable MFA in Supabase.');
+    mfaFactorId=d.id; const t=d.totp||{}, qr=t.qr_code||'';
+    el('mfa-qr').innerHTML = qr.indexOf('data:')===0 ? ('<img src="'+qr+'" style="width:185px;height:185px;display:block">') : qr;
+    el('mfa-secret').textContent=t.secret||'';
+    el('mfa-enroll-code').value=''; setTimeout(()=>el('mfa-enroll-code').focus(),50);
+  }catch(e){ mfaErr('mfa-enroll-err',e.message); }
+}
+async function verifyMfaEnroll(){
+  const code=el('mfa-enroll-code').value.trim();
+  if(!/^\d{6}$/.test(code)){ mfaErr('mfa-enroll-err','Enter the 6-digit code from your app.'); return; }
+  el('mfa-enroll-btn').disabled=true; el('mfa-enroll-btn').textContent='Verifying…';
+  try{
+    const ch=await fetch(SB_URL+'/auth/v1/factors/'+mfaFactorId+'/challenge',{method:'POST',headers:mfaH()});
+    const cd=await ch.json(); if(!ch.ok) throw new Error(cd.error_description||cd.msg||cd.message||'Could not verify');
+    const ver=await fetch(SB_URL+'/auth/v1/factors/'+mfaFactorId+'/verify',{method:'POST',headers:mfaH(),body:JSON.stringify({challenge_id:cd.id,code})});
+    const vd=await ver.json(); if(!ver.ok) throw new Error(vd.error_description||vd.msg||vd.message||'Wrong code — try again');
+    await finishMfa(vd);
+  }catch(e){ mfaErr('mfa-enroll-err',e.message); el('mfa-enroll-btn').disabled=false; el('mfa-enroll-btn').innerHTML='Verify &amp; finish →'; }
+}
+async function beginMfaChallenge(factorId){
+  mfaFactorId=factorId;
+  el('login-fields').classList.add('hidden'); el('mfa-enroll').classList.add('hidden'); el('mfa-challenge').classList.remove('hidden');
+  el('mfa-err').style.display='none'; el('mfa-code').value='';
+  try{
+    const ch=await fetch(SB_URL+'/auth/v1/factors/'+factorId+'/challenge',{method:'POST',headers:mfaH()});
+    const cd=await ch.json(); if(!ch.ok) throw new Error(cd.error_description||cd.msg||cd.message||'Could not start verification');
+    mfaChallengeId=cd.id; setTimeout(()=>el('mfa-code').focus(),50);
+  }catch(e){ mfaErr('mfa-err',e.message); }
+}
+async function verifyMfaChallenge(){
+  const code=el('mfa-code').value.trim();
+  if(!/^\d{6}$/.test(code)){ mfaErr('mfa-err','Enter the 6-digit code from your app.'); return; }
+  el('mfa-btn').disabled=true; el('mfa-btn').textContent='Verifying…';
+  try{
+    const ver=await fetch(SB_URL+'/auth/v1/factors/'+mfaFactorId+'/verify',{method:'POST',headers:mfaH(),body:JSON.stringify({challenge_id:mfaChallengeId,code})});
+    const vd=await ver.json(); if(!ver.ok) throw new Error(vd.error_description||vd.msg||vd.message||'Wrong or expired code');
+    await finishMfa(vd);
+  }catch(e){ mfaErr('mfa-err',e.message); el('mfa-btn').disabled=false; el('mfa-btn').textContent='Verify →'; }
+}
+async function finishMfa(s){
+  if(!s||!s.access_token){ mfaErr('mfa-err','Verification did not return a session. Try again.'); return; }
+  currentUser=s.user||currentUser;
+  localStorage.setItem('ss_session',JSON.stringify({access_token:s.access_token,refresh_token:s.refresh_token,user:currentUser}));
+  el('mfa-enroll').classList.add('hidden'); el('mfa-challenge').classList.add('hidden'); el('login-fields').classList.remove('hidden');
+  el('mfa-enroll-btn').disabled=false; el('mfa-enroll-btn').innerHTML='Verify &amp; finish →'; el('mfa-btn').disabled=false; el('mfa-btn').textContent='Verify →';
+  await afterLogin(s.access_token);
 }
 function showAuthErr(msg){ const e=el('auth-err'); e.textContent=msg; e.style.display='block'; }
 
@@ -858,6 +946,10 @@ async function doLogout() {
   el('auth-email').value=''; el('auth-pass').value='';
   el('auth-btn').textContent='Sign In →'; el('auth-btn').disabled=false;
   el('auth-err').style.display='none';
+  mfaTmpToken=null;
+  if(el('login-fields')) el('login-fields').classList.remove('hidden');
+  if(el('mfa-enroll')) el('mfa-enroll').classList.add('hidden');
+  if(el('mfa-challenge')) el('mfa-challenge').classList.add('hidden');
 }
 
 function showUserMenu(){ /* future: show role info */ }
