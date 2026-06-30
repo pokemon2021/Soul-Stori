@@ -697,6 +697,20 @@ input:checked+.tog-sl:before{transform:translateX(15px)}
   </div>
 </div>
 
+<!-- RESERVE / HOLD MODAL -->
+<div class="mod-ov hidden" id="reserveModOv">
+  <div class="mod" style="max-width:440px">
+    <div class="mod-hd"><div class="mod-t">&#128338; Reserve / Hold</div><button class="xbtn" onclick="hideReserveMod()">&#215;</button></div>
+    <div class="mod-body">
+      <div class="sale-summary" id="reserve-summary" style="border-left-color:var(--blue)"></div>
+      <div class="fgroup full" style="margin-bottom:12px"><label class="flabel">Held for (customer)</label><input class="finput" id="reserve-for" placeholder="Customer name, WhatsApp&#8230;"></div>
+      <div class="fgroup full" style="margin-bottom:12px"><label class="flabel">Hold until</label><input class="finput" id="reserve-until" type="date"></div>
+      <div class="fgroup full"><label class="flabel">Notes (optional)</label><textarea class="finput ftarea" id="reserve-note" placeholder="Deposit taken, deal terms&#8230;" style="min-height:55px"></textarea></div>
+    </div>
+    <div class="mod-ft"><button class="btn" onclick="hideReserveMod()">Cancel</button><button class="btn btn-dark" onclick="confirmReserve()">&#128338; Confirm Hold</button></div>
+  </div>
+</div>
+
 <!-- QR LABEL PRINT MODAL -->
 <div class="mod-ov hidden" id="qrModOv">
   <div class="mod" style="max-width:800px">
@@ -789,7 +803,7 @@ let items=[], filtered=[], editId=null, detId=null, VM='grid', QF=null, SC=null,
 const catSel=new Set();
 let catModeOn=false, currentUser=null, userRole='';
 const signedUrlCache={};
-let sellId=null, removeId=null;
+let sellId=null, removeId=null, reserveId=null;
 
 function el(id){ return document.getElementById(id); }
 
@@ -1013,8 +1027,8 @@ async function dbDelete(id) {
   }catch(e){setSyncStatus('err','Delete failed');console.error(e);}
 }
 
-function dbRowToItem(r){return{id:r.id,sku:r.sku||'',loc:r.loc||'',name:r.name||'',subcat:r.subcat||'',category:r.category||'',stone:r.stone||'',stoneCat:r.stone_cat||'',origin:r.origin||'',wtCts:r.wt_cts,wtKg:r.wt_kg,ht:r.ht,width:r.width,depth:r.depth,price:r.price,listPrice:r.list_price,priceUSD:r.price_usd,cost:r.cost,por:!!r.por,certified:!!r.certified,certNo:r.cert_no||'',certBody:r.cert_body||'',hasPhoto:!!r.has_photo,photoUrl:r.photo_url||'',status:r.status||'available',sizecat:r.sizecat||'',chWeb:!!r.ch_web,chEtsy:!!r.ch_etsy,chWA:!!r.ch_wa,notes:r.notes||'',soldPrice:r.sold_price,soldDate:r.sold_date,soldBuyer:r.sold_buyer||'',quotedPrice:r.quoted_price,removedReason:r.removed_reason||'',removedDate:r.removed_date};}
-function itemToDbRow(item){return{id:item.id,sku:item.sku,loc:item.loc,name:item.name,subcat:item.subcat,category:item.category,stone:item.stone,stone_cat:item.stoneCat,origin:item.origin,wt_cts:item.wtCts||null,wt_kg:item.wtKg||null,ht:item.ht||null,width:item.width||null,depth:item.depth||null,price:item.price||null,list_price:item.listPrice||null,price_usd:item.priceUSD||null,cost:item.cost||null,por:!!item.por,certified:!!item.certified,cert_no:item.certNo||null,cert_body:item.certBody||null,has_photo:!!item.hasPhoto,photo_url:item.photoUrl||null,status:item.status||'available',sizecat:item.sizecat||null,ch_web:!!item.chWeb,ch_etsy:!!item.chEtsy,ch_wa:!!item.chWA,notes:item.notes||null,sold_price:item.soldPrice||null,sold_date:item.soldDate||null,sold_buyer:item.soldBuyer||null,quoted_price:item.quotedPrice||null,removed_reason:item.removedReason||null,removed_date:item.removedDate||null};}
+function dbRowToItem(r){return{id:r.id,sku:r.sku||'',loc:r.loc||'',name:r.name||'',subcat:r.subcat||'',category:r.category||'',stone:r.stone||'',stoneCat:r.stone_cat||'',origin:r.origin||'',wtCts:r.wt_cts,wtKg:r.wt_kg,ht:r.ht,width:r.width,depth:r.depth,price:r.price,listPrice:r.list_price,priceUSD:r.price_usd,cost:r.cost,por:!!r.por,certified:!!r.certified,certNo:r.cert_no||'',certBody:r.cert_body||'',hasPhoto:!!r.has_photo,photoUrl:r.photo_url||'',status:r.status||'available',sizecat:r.sizecat||'',chWeb:!!r.ch_web,chEtsy:!!r.ch_etsy,chWA:!!r.ch_wa,notes:r.notes||'',soldPrice:r.sold_price,soldDate:r.sold_date,soldBuyer:r.sold_buyer||'',quotedPrice:r.quoted_price,reservedFor:r.reserved_for||'',reservedUntil:r.reserved_until,removedReason:r.removed_reason||'',removedDate:r.removed_date};}
+function itemToDbRow(item){return{id:item.id,sku:item.sku,loc:item.loc,name:item.name,subcat:item.subcat,category:item.category,stone:item.stone,stone_cat:item.stoneCat,origin:item.origin,wt_cts:item.wtCts||null,wt_kg:item.wtKg||null,ht:item.ht||null,width:item.width||null,depth:item.depth||null,price:item.price||null,list_price:item.listPrice||null,price_usd:item.priceUSD||null,cost:item.cost||null,por:!!item.por,certified:!!item.certified,cert_no:item.certNo||null,cert_body:item.certBody||null,has_photo:!!item.hasPhoto,photo_url:item.photoUrl||null,status:item.status||'available',sizecat:item.sizecat||null,ch_web:!!item.chWeb,ch_etsy:!!item.chEtsy,ch_wa:!!item.chWA,notes:item.notes||null,sold_price:item.soldPrice||null,sold_date:item.soldDate||null,sold_buyer:item.soldBuyer||null,quoted_price:item.quotedPrice||null,reserved_for:item.reservedFor||null,reserved_until:item.reservedUntil||null,removed_reason:item.removedReason||null,removed_date:item.removedDate||null};}
 
 // ── MOVEMENT LOG ───────────────────────────────────────────────
 async function logMove(sku, itemName, action, notes) {
@@ -1278,7 +1292,7 @@ function showDetail(id){
   el('d-img-box').innerHTML=mediaHTML(gdUrl(item.photoUrl),'lg');
   el('d-sku').textContent=item.sku;
   el('d-name').textContent=item.name+(item.subcat?' · '+item.subcat:'');
-  el('d-sub').textContent=[item.stone,item.stoneCat,item.origin].filter(Boolean).join(' · ');
+  el('d-sub').textContent=[item.stone,item.stoneCat,item.origin].filter(Boolean).join(' · ')+(item.status==='reserved'&&(item.reservedFor||item.reservedUntil)?'  ·  🔒 Held'+(item.reservedFor?' for '+item.reservedFor:'')+(item.reservedUntil?' until '+item.reservedUntil:''):'');
   const showPrice=userRole!=='warehouse';
   el('d-price').textContent=!showPrice?'—':item.price?fpF(item.price):item.por?'Price on Request':'Price not set';
   el('d-pmeta').textContent=showPrice&&item.listPrice&&item.listPrice!==item.price?'MRP: '+fpF(item.listPrice):'';
@@ -1306,7 +1320,7 @@ function showDetail(id){
   el('d-edit-btn').style.display=isAdmin?'':'none';
   el('d-del-btn').style.display=isAdmin?'':'none';
   el('d-edit-btn').onclick=()=>openEdit(id);
-  el('d-res-btn').onclick=()=>markSt(id,'reserved');
+  el('d-res-btn').onclick=()=>openReserveMod(id);
   el('d-sell-btn').onclick=()=>openSellMod(id);
   el('d-remove-btn').onclick=()=>openRemoveMod(id);
   el('d-avail-btn').onclick=()=>markSt(id,'available');
@@ -1429,6 +1443,17 @@ async function confirmRemove(){
   const rid=removeId;hideRemoveMod();runFilter();if(detId===rid)showDetail(rid);
   await upsertItem(item);
   logMove(item.sku,item.name,'REMOVED',reason+(note?' — '+note:''));
+}
+function openReserveMod(id){const item=items.find(i=>i.id===id);if(!item)return;reserveId=id;el('reserve-summary').innerHTML=`<strong>${esc(item.sku)}</strong> — ${esc(item.name)}${item.stone?' · '+esc(item.stone):''}`;setV('reserve-for',item.reservedFor||'');el('reserve-until').value=item.reservedUntil||'';setV('reserve-note','');el('reserveModOv').classList.remove('hidden');}
+function hideReserveMod(){el('reserveModOv').classList.add('hidden');reserveId=null;}
+async function confirmReserve(){
+  const item=items.find(i=>i.id===reserveId);if(!item)return;
+  const who=el('reserve-for').value.trim(),until=el('reserve-until').value||null,note=el('reserve-note').value.trim();
+  item.status='reserved';item.reservedFor=who;item.reservedUntil=until;
+  if(note)item.notes=(item.notes?item.notes+'\n':'')+`[HELD${until?' until '+until:''}${who?' for '+who:''}] ${note}`;
+  const rid=reserveId;hideReserveMod();runFilter();if(detId===rid)showDetail(rid);
+  await upsertItem(item);
+  logMove(item.sku,item.name,'RESERVED',(who?'for '+who:'on hold')+(until?' until '+until:''));
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1627,6 +1652,10 @@ function renderDash(){
 
   const locs=topL.length?topL.map(([l,c])=>`<div class="chip2">📍 <b>${esc(l)}</b> ${c}</div>`).join(''):'<div class="dash-empty">No locations recorded.</div>';
 
+  const holdsList=items.filter(i=>i.status==='reserved');
+  const _today=new Date().toISOString().slice(0,10);
+  const holdsRows=holdsList.length?holdsList.map(i=>{const exp=i.reservedUntil&&i.reservedUntil<_today;return `<div class="arow" onclick="showDetail(${i.id})"><div class="aic">${getEM(i.name)}</div><div class="am"><div class="at">${esc(i.name)} · ${esc(i.sku)}</div><div class="as">${i.reservedFor?'Held for '+esc(i.reservedFor):'On hold'}${i.reservedUntil?' · until '+esc(i.reservedUntil):''}</div></div>${exp?'<span style="font-size:10px;font-weight:600;color:var(--red);background:var(--red-l);padding:3px 9px;border-radius:20px">EXPIRED</span>':'<span style="font-size:10px;font-weight:600;color:var(--blue);background:var(--blue-l);padding:3px 9px;border-radius:20px">ON HOLD</span>'}</div>`;}).join(''):'<div class="dash-empty">No active holds.</div>';
+
   el('dash-body').innerHTML=`
     <div class="dh-head"><div><div class="dh-title">Dashboard &amp; Reports</div><div class="dh-sub">Your collection at a glance · ${total} pieces</div></div></div>
     <div class="mcards">${mcards}</div>
@@ -1640,6 +1669,7 @@ function renderDash(){
       <div class="panel"><div class="panel-h"><span>📏</span><div class="panel-t">Size Distribution</div></div><div class="vbars">${szBars}</div></div>
     </div>
     ${showPrice?`<div class="panel" style="margin-bottom:14px"><div class="panel-h"><span>💰</span><div class="panel-t">Value Snapshot</div></div>${snap}</div>`:''}
+    <div class="panel" style="margin-bottom:14px"><div class="panel-h"><span>🔒</span><div class="panel-t">Active Holds</div></div>${holdsRows}</div>
     <div class="dgrid c2">
       <div class="panel"><div class="panel-h"><span>📝</span><div class="panel-t">Needs Attention</div></div>${todo}</div>
       <div class="panel"><div class="panel-h"><span>🧾</span><div class="panel-t">Recent Sales</div></div>${sales}</div>
