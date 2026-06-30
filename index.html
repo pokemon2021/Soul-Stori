@@ -843,8 +843,14 @@ async function beginMfaEnroll(){
     const res=await fetch(SB_URL+'/auth/v1/factors',{method:'POST',headers:mfaH(),body:JSON.stringify({factor_type:'totp',friendly_name:'SoulStori-'+Date.now()})});
     const d=await res.json();
     if(!res.ok) throw new Error(d.error_description||d.msg||d.message||'Could not start 2FA setup. Ask your admin to enable MFA in Supabase.');
-    mfaFactorId=d.id; const t=d.totp||{}, qr=t.qr_code||'';
-    el('mfa-qr').innerHTML = qr.indexOf('data:')===0 ? ('<img src="'+qr+'" style="width:185px;height:185px;display:block">') : qr;
+    mfaFactorId=d.id; const t=d.totp||{};
+    el('mfa-qr').innerHTML='';
+    if(t.uri && typeof QRCode!=='undefined'){
+      try{ new QRCode(el('mfa-qr'),{text:t.uri,width:190,height:190,colorDark:'#2C2825',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M}); }
+      catch(_){ const qr=t.qr_code||''; el('mfa-qr').innerHTML=qr.indexOf('data:')===0?('<img src="'+qr+'" style="width:190px;height:190px">'):qr; }
+    } else {
+      const qr=t.qr_code||''; el('mfa-qr').innerHTML=qr.indexOf('data:')===0?('<img src="'+qr+'" style="width:190px;height:190px">'):qr;
+    }
     el('mfa-secret').textContent=t.secret||'';
     el('mfa-enroll-code').value=''; setTimeout(()=>el('mfa-enroll-code').focus(),50);
   }catch(e){ mfaErr('mfa-enroll-err',e.message); }
