@@ -1150,6 +1150,8 @@ function runFilter(){
     return true;
   });
   if(SC){filtered.sort((a,b)=>{let av=a[SC],bv=b[SC];if(av==null&&bv==null)return 0;if(av==null)return SD;if(bv==null)return -SD;return typeof av==='string'?av.localeCompare(bv)*SD:(av-bv)*SD;});}
+  // Keep sold pieces at the bottom of the list (stable sort preserves the order above)
+  filtered.sort((a,b)=>(a.status==='sold'?1:0)-(b.status==='sold'?1:0));
   render(); updateCounts();
   const any=q||QF||fI||fS||fSz||fL||fSt;
   el('tb-title').textContent=any?filtered.length+' of '+items.length+' pieces':items.length+' pieces';
