@@ -384,6 +384,12 @@ input:checked+.tog-sl:before{transform:translateX(15px)}
 .cust-name{font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:600;color:var(--stone)}
 .cust-meta{font-size:11.5px;color:var(--stone-l);margin-top:2px}
 .cust-total{font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:600;color:var(--stone);flex-shrink:0}
+.fchips{display:flex;flex-wrap:wrap;gap:7px;padding:10px 18px 2px}
+.fchips:empty{display:none}
+.fchip{display:inline-flex;align-items:center;gap:6px;background:var(--gold-p);color:var(--stone-m);border:1px solid var(--border);border-radius:20px;padding:4px 6px 4px 12px;font-size:11.5px}
+.fchip button{background:rgba(44,40,37,.1);border:none;color:var(--stone);width:17px;height:17px;border-radius:50%;cursor:pointer;font-size:12px;line-height:1;display:flex;align-items:center;justify-content:center}
+.fchip button:hover{background:var(--red-l);color:var(--red)}
+.fchip-clr{background:none;border:none;color:var(--gold);font-size:11.5px;cursor:pointer;text-decoration:underline;padding:4px 6px}
 @media(max-width:980px){.dgrid.c3{grid-template-columns:1fr 1fr}}
 @media(max-width:680px){.dgrid.c3{grid-template-columns:1fr}.rd-row{gap:14px}}
 
@@ -496,6 +502,7 @@ input:checked+.tog-sl:before{transform:translateX(15px)}
   <div class="nav" id="nav-ce" onclick="toggleQ('certified')"><span class="nav-ic">&#127885;</span>Certified<span class="nc" id="nc-ce">0</span></div>
   <div class="nav" id="nav-sold" onclick="toggleQ('sold')"><span class="nav-ic">&#9989;</span>Sold<span class="nc" id="nc-sold">0</span></div>
   <div class="nav" id="nav-removed" onclick="toggleQ('removed')"><span class="nav-ic">&#128230;</span>Removed<span class="nc" id="nc-removed">0</span></div>
+  <div class="nav" id="nav-reserved" onclick="toggleQ('reserved')"><span class="nav-ic">&#128274;</span>On Hold<span class="nc" id="nc-reserved">0</span></div>
   <div class="sb-sec">Filter By</div>
   <div class="fgrp"><span class="flbl">Deity / Idol</span><select class="fsel" id="fIdol" onchange="doFilter()"><option value="">All deities</option></select></div>
   <div class="fgrp"><span class="flbl">Gemstone</span><select class="fsel" id="fStone" onchange="doFilter()"><option value="">All gemstones</option></select></div>
@@ -534,6 +541,7 @@ input:checked+.tog-sl:before{transform:translateX(15px)}
       <button class="btn btn-blue" onclick="openQRPrint()">&#9707; Print QR Labels</button>
       <button class="btn" onclick="endCatMode()" style="margin-left:auto">Done</button>
     </div>
+    <div id="filter-chips" class="fchips"></div>
     <div id="grid-c" class="grid-view"></div>
     <div id="tbl-c" class="tbl-wrap hidden"></div>
   </div>
@@ -701,7 +709,7 @@ input:checked+.tog-sl:before{transform:translateX(15px)}
     <div class="mod-body">
       <div class="sale-summary" id="remove-summary" style="border-left-color:var(--amber)"></div>
       <div class="fgroup full" style="margin-bottom:12px"><label class="flabel">Reason <span class="req">*</span></label>
-        <select class="finput fsel2" id="remove-reason"><option value="Damaged">Damaged</option><option value="Lost">Lost</option><option value="Gifted">Gifted</option><option value="Internal Use">Internal / Personal Use</option><option value="Returned to Supplier">Returned to Supplier</option><option value="Other">Other</option></select></div>
+        <select class="finput fsel2" id="remove-reason"><option value="Broken">Broken</option><option value="Lost">Lost</option><option value="Gifted">Gifted</option><option value="Internal Use">Internal / Personal Use</option><option value="Returned to Supplier">Returned to Supplier</option><option value="Other">Other</option></select></div>
       <div class="fgroup full" style="margin-bottom:12px"><label class="flabel">Date</label><input class="finput" id="remove-date" type="date"></div>
       <div class="fgroup full"><label class="flabel">Notes (optional)</label><textarea class="finput ftarea" id="remove-note" placeholder="Any additional detail&#8230;" style="min-height:55px"></textarea></div>
     </div>
@@ -722,6 +730,9 @@ input:checked+.tog-sl:before{transform:translateX(15px)}
     <div class="mod-ft"><button class="btn" onclick="hideReserveMod()">Cancel</button><button class="btn btn-dark" onclick="confirmReserve()">&#128338; Confirm Hold</button></div>
   </div>
 </div>
+
+<!-- PHOTO LIGHTBOX -->
+<div id="lightbox" class="hidden" onclick="closePhoto()" style="position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:10000;display:flex;align-items:center;justify-content:center;padding:24px;cursor:zoom-out"><img id="lightbox-img" alt="" style="max-width:100%;max-height:100%;border-radius:8px;box-shadow:0 10px 40px rgba(0,0,0,.5)"></div>
 
 <!-- QR LABEL PRINT MODAL -->
 <div class="mod-ov hidden" id="qrModOv">
@@ -1154,7 +1165,7 @@ function renderCust(){
     <div class="snap" style="margin-bottom:16px">${tile('Customers',totalCust)}${tile('Total Sales',money(totalSales))}${tile('Top Customer',top?esc(top.name):'—')}</div>
     ${cards}`;
 }
-function toggleQ(f){if(QF===f){goHome();return;}QF=f;showOnly('inv');const m={'no-price':'nav-np','no-photo':'nav-nph','certified':'nav-ce','sold':'nav-sold','removed':'nav-removed'};setNav(m[f]||'nav-inv');runFilter();}
+function toggleQ(f){if(QF===f){goHome();return;}QF=f;showOnly('inv');const m={'no-price':'nav-np','no-photo':'nav-nph','certified':'nav-ce','sold':'nav-sold','removed':'nav-removed','reserved':'nav-reserved'};setNav(m[f]||'nav-inv');runFilter();}
 
 // ═══════════════════════════════════════════════════════════════
 // QUICK SCAN MODE
@@ -1247,7 +1258,7 @@ function doScan() {
 // ═══════════════════════════════════════════════════════════════
 // FILTER & SEARCH
 // ═══════════════════════════════════════════════════════════════
-function doSearch(){el('srchX').classList.toggle('hidden',!el('srchInp').value);showOnly('inv');const m={'no-price':'nav-np','no-photo':'nav-nph','certified':'nav-ce','sold':'nav-sold','removed':'nav-removed'};setNav(QF&&m[QF]?m[QF]:'nav-inv');runFilter();}
+function doSearch(){el('srchX').classList.toggle('hidden',!el('srchInp').value);showOnly('inv');const m={'no-price':'nav-np','no-photo':'nav-nph','certified':'nav-ce','sold':'nav-sold','removed':'nav-removed','reserved':'nav-reserved'};setNav(QF&&m[QF]?m[QF]:'nav-inv');runFilter();}
 function clearSearch(){el('srchInp').value='';el('srchX').classList.add('hidden');runFilter();}
 function doFilter(){runFilter();}
 function runFilter(){
@@ -1256,7 +1267,7 @@ function runFilter(){
   filtered=items.filter(item=>{
     if(q){const fs=[item.sku,item.name,item.subcat,item.stone,item.loc,item.certNo,item.notes,item.origin,item.category];if(!fs.some(f=>(f||'').toLowerCase().includes(q)))return false;}
     if(fI&&item.name!==fI)return false;if(fS&&item.stone!==fS)return false;if(fSz&&item.sizecat!==fSz)return false;if(fL&&item.loc!==fL)return false;if(fSt&&item.status!==fSt)return false;
-    if(QF){const st=effSt(item);if(QF==='no-price'&&st!=='no-price')return false;if(QF==='no-photo'&&item.hasPhoto)return false;if(QF==='certified'&&!item.certified)return false;if(QF==='sold'&&item.status!=='sold')return false;if(QF==='removed'&&item.status!=='removed')return false;}
+    if(QF){const st=effSt(item);if(QF==='no-price'&&st!=='no-price')return false;if(QF==='no-photo'&&item.hasPhoto)return false;if(QF==='certified'&&!item.certified)return false;if(QF==='sold'&&item.status!=='sold')return false;if(QF==='removed'&&item.status!=='removed')return false;if(QF==='reserved'&&item.status!=='reserved')return false;}
     return true;
   });
   if(SC){filtered.sort((a,b)=>{let av=a[SC],bv=b[SC];if(av==null&&bv==null)return 0;if(av==null)return SD;if(bv==null)return -SD;return typeof av==='string'?av.localeCompare(bv)*SD:(av-bv)*SD;});}
@@ -1265,6 +1276,23 @@ function runFilter(){
   render(); updateCounts();
   const any=q||QF||fI||fS||fSz||fL||fSt;
   el('tb-title').textContent=any?filtered.length+' of '+items.length+' pieces':items.length+' pieces';
+  const rawQ=el('srchInp').value.trim();
+  const qfLabel={'no-price':'No price','no-photo':'Needs photo','certified':'Certified','sold':'Sold','removed':'Removed','reserved':'On hold'};
+  const chips=[];
+  if(rawQ)chips.push(['srch','Search: '+rawQ]);
+  if(QF)chips.push(['qf',qfLabel[QF]||QF]);
+  if(fI)chips.push(['fIdol','Idol: '+fI]);
+  if(fS)chips.push(['fStone','Stone: '+fS]);
+  if(fSz)chips.push(['fSize','Size: '+fSz]);
+  if(fL)chips.push(['fLoc','Location: '+fL]);
+  if(fSt)chips.push(['fStatus','Status: '+fSt]);
+  if(el('filter-chips'))el('filter-chips').innerHTML=chips.length?chips.map(c=>`<span class="fchip">${esc(c[1])}<button onclick="clrF('${c[0]}')" title="Clear">&times;</button></span>`).join('')+`<button class="fchip-clr" onclick="goHome()">Clear all</button>`:'';
+}
+function clrF(t){
+  if(t==='srch'){el('srchInp').value='';el('srchX').classList.add('hidden');}
+  else if(t==='qf'){QF=null;setNav('nav-inv');}
+  else{el(t).value='';}
+  runFilter();
 }
 function sortBy(col){SC===col?SD*=-1:(SC=col,SD=1);runFilter();}
 function updateCounts(){
@@ -1278,6 +1306,7 @@ function updateCounts(){
   el('nc-ce').textContent=cert;
   el('nc-sold').textContent=items.filter(i=>i.status==='sold').length;
   el('nc-removed').textContent=items.filter(i=>i.status==='removed').length;
+  if(el('nc-reserved')) el('nc-reserved').textContent=items.filter(i=>i.status==='reserved').length;
 }
 function fillDropdowns(){
   const fill=(id,arr)=>{const e=el(id),cur=e.value;e.innerHTML='<option value="">'+e.options[0].text+'</option>'+arr.map(v=>'<option>'+esc(v)+'</option>').join('');e.value=arr.includes(cur)?cur:'';};
@@ -1331,6 +1360,8 @@ function showDetail(id){
   const item=items.find(i=>i.id===id);if(!item)return;
   detId=id;
   el('d-img-box').innerHTML=mediaHTML(gdUrl(item.photoUrl),'lg');
+  el('d-img-box').onclick=item.photoUrl?function(){openPhoto(gdUrl(item.photoUrl));}:null;
+  el('d-img-box').style.cursor=item.photoUrl?'zoom-in':'';
   el('d-sku').textContent=item.sku;
   el('d-name').textContent=item.name+(item.subcat?' · '+item.subcat:'');
   el('d-sub').textContent=[item.stone,item.stoneCat,item.origin].filter(Boolean).join(' · ')+(item.status==='reserved'&&(item.reservedFor||item.reservedUntil)?'  ·  🔒 Held'+(item.reservedFor?' for '+item.reservedFor:'')+(item.reservedUntil?' until '+item.reservedUntil:''):'');
@@ -1382,6 +1413,9 @@ function hideMod(){el('modOv').classList.add('hidden');editId=null;}
 async function savePiece(){
   const sku=el('f-sku').value.trim(),name=el('f-name').value.trim();
   if(!sku||!name){alert('SKU and Piece Name are required.');return;}
+  if(editId===null && items.some(i=>(i.sku||'').trim().toLowerCase()===sku.toLowerCase())){
+    if(!confirm('A piece with SKU "'+sku+'" already exists. Save anyway? (This may create a duplicate.)'))return;
+  }
   const htV=pfN('f-ht');let szcat='';
   if(htV){if(htV<4)szcat='Below 4"';else if(htV<7)szcat='4"–6"';else if(htV<10)szcat='7"–9"';else if(htV<13)szcat='10"–12"';else szcat='13"+';}
   const d={sku,name,loc:el('f-loc').value.trim(),subcat:el('f-sub').value.trim(),category:el('f-cat').value.trim(),stone:el('f-stone').value.trim(),stoneCat:el('f-scat').value,origin:el('f-orig').value.trim(),certified:el('f-cert').checked,certNo:el('f-certno').value.trim(),certBody:el('f-certb').value.trim(),wtCts:pfN('f-wcts'),wtKg:pfN('f-wkg'),ht:htV,width:pfN('f-w'),depth:pfN('f-d'),cost:pfN('f-cost'),listPrice:pfN('f-lp'),price:pfN('f-price'),priceUSD:pfN('f-usd'),por:el('f-por').checked,status:el('f-status').value,hasPhoto:el('f-photo').checked,chWeb:el('f-web').checked,chEtsy:el('f-etsy').checked,chWA:el('f-wa').checked,photoUrl:el('f-photo-url').value.trim(),notes:el('f-notes').value.trim(),sizecat:szcat};
@@ -1474,7 +1508,7 @@ async function confirmSell(){
   await upsertItem(item);
   logMove(item.sku,item.name,'SOLD',`${price?'₹'+price.toLocaleString():'price pending'}${buyer?' to '+buyer:''}`);
 }
-function openRemoveMod(id){const item=items.find(i=>i.id===id);if(!item)return;removeId=id;el('remove-summary').innerHTML=`<strong>${esc(item.sku)}</strong> — ${esc(item.name)}${item.stone?' · '+esc(item.stone):''}`;el('remove-reason').value='Damaged';el('remove-date').value=new Date().toISOString().slice(0,10);setV('remove-note','');el('removeModOv').classList.remove('hidden');}
+function openRemoveMod(id){const item=items.find(i=>i.id===id);if(!item)return;removeId=id;el('remove-summary').innerHTML=`<strong>${esc(item.sku)}</strong> — ${esc(item.name)}${item.stone?' · '+esc(item.stone):''}`;el('remove-reason').value='Broken';el('remove-date').value=new Date().toISOString().slice(0,10);setV('remove-note','');el('removeModOv').classList.remove('hidden');}
 function hideRemoveMod(){el('removeModOv').classList.add('hidden');removeId=null;}
 async function confirmRemove(){
   const item=items.find(i=>i.id===removeId);if(!item)return;
@@ -1485,6 +1519,8 @@ async function confirmRemove(){
   await upsertItem(item);
   logMove(item.sku,item.name,'REMOVED',reason+(note?' — '+note:''));
 }
+function openPhoto(url){if(!url)return;el('lightbox-img').src=url;el('lightbox').classList.remove('hidden');}
+function closePhoto(){el('lightbox').classList.add('hidden');el('lightbox-img').src='';}
 function openReserveMod(id){const item=items.find(i=>i.id===id);if(!item)return;reserveId=id;el('reserve-summary').innerHTML=`<strong>${esc(item.sku)}</strong> — ${esc(item.name)}${item.stone?' · '+esc(item.stone):''}`;setV('reserve-for',item.reservedFor||'');el('reserve-until').value=item.reservedUntil||'';setV('reserve-note','');el('reserveModOv').classList.remove('hidden');}
 function hideReserveMod(){el('reserveModOv').classList.add('hidden');reserveId=null;}
 async function confirmReserve(){
