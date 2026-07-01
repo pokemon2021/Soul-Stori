@@ -619,6 +619,7 @@ input:checked+.tog-sl:before{transform:translateX(15px)}
       <button class="btn btn-remove" id="d-remove-btn">&#128230; Remove</button>
       <button class="btn" id="d-avail-btn">&#8617; Available</button>
       <button class="btn btn-blue" id="d-qr-btn">&#9707; QR Label</button>
+      <button class="btn btn-gold" id="d-receipt-btn">&#129534; Receipt</button>
       <button class="btn btn-red" id="d-del-btn">&#128465; Delete</button>
     </div>
   </div>
@@ -1397,6 +1398,7 @@ function showDetail(id){
   el('d-remove-btn').onclick=()=>openRemoveMod(id);
   el('d-avail-btn').onclick=()=>markSt(id,'available');
   el('d-qr-btn').onclick=()=>printSingleQR(id);
+  if(el('d-receipt-btn')){el('d-receipt-btn').onclick=()=>printReceipt(id);el('d-receipt-btn').style.display=item.status==='sold'?'':'none';}
   el('d-del-btn').onclick=()=>delItem(id);
   el('detOv').classList.remove('hidden');
 }
@@ -1593,6 +1595,39 @@ function openQRPrint(){
 }
 function hideQRMod(){el('qrModOv').classList.add('hidden');}
 
+function printReceipt(id){
+  const item=items.find(i=>i.id===id); if(!item)return;
+  const w=window.open('','_blank'); if(!w){alert('Please allow popups to print the receipt.');return;}
+  const money=v=>v?'₹'+Number(v).toLocaleString('en-IN'):'—';
+  const dims=[item.ht&&item.ht+'"H',item.width&&item.width+'"W',item.depth&&item.depth+'"D'].filter(Boolean).join(' × ')||'—';
+  const wt=dispWt(item);
+  const line=(l,v)=>(v&&v!=='—')?`<tr><td class="l">${l}</td><td class="v">${esc(String(v))}</td></tr>`:'';
+  const disc=(item.price&&item.soldPrice&&item.price>item.soldPrice)?item.price-item.soldPrice:0;
+  const today=new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'long',year:'numeric'});
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Receipt — ${esc(item.sku)}</title><link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet"><style>
+*{box-sizing:border-box;margin:0;padding:0}body{font-family:'DM Sans',sans-serif;color:#2C2825;padding:40px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.rc{max-width:620px;margin:0 auto;border:1px solid rgba(184,147,90,.35);border-radius:14px;overflow:hidden}
+.rc-hd{background:linear-gradient(135deg,#F5EDD8,#EDE0C8);padding:26px 30px;text-align:center;border-bottom:2px solid #B8935A}
+.rc-logo{font-family:'Cormorant Garamond',serif;font-size:30px;letter-spacing:.08em;color:#2C2825}.rc-logo em{font-style:italic;color:#B8935A}
+.rc-tag{font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:#9A8F85;margin-top:4px}
+.rc-title{font-family:'Cormorant Garamond',serif;font-size:15px;letter-spacing:.15em;text-transform:uppercase;color:#B8935A;margin-top:14px}
+.rc-meta{display:flex;justify-content:space-between;padding:18px 30px;font-size:12px;color:#5A544E;border-bottom:1px solid rgba(184,147,90,.2);line-height:1.6}
+.rc-body{padding:20px 30px}table{width:100%;border-collapse:collapse}td{padding:6px 0;font-size:13px;vertical-align:top}
+td.l{color:#9A8F85;width:150px;text-transform:uppercase;font-size:10px;letter-spacing:.05em;padding-top:8px}td.v{color:#2C2825;font-weight:500}
+.rc-total{display:flex;justify-content:space-between;align-items:baseline;margin-top:20px;padding-top:16px;border-top:2px solid #B8935A}
+.rc-total .lbl{font-family:'Cormorant Garamond',serif;font-size:18px}.rc-total .amt{font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:600}
+.rc-ft{text-align:center;padding:18px 30px;font-size:10px;color:#9A8F85;border-top:1px solid rgba(184,147,90,.2);line-height:1.7}
+@media print{body{padding:0}.rc{border:none}}
+</style></head><body><div class="rc">
+  <div class="rc-hd"><div class="rc-logo">Soul<em>Stori</em></div><div class="rc-tag">Where Faith Meets Artistry</div><div class="rc-title">Receipt</div></div>
+  <div class="rc-meta"><div><b>Receipt No:</b> ${esc(item.sku)}<br><b>Date:</b> ${esc(item.soldDate||today)}</div><div style="text-align:right"><b>Billed to</b><br>${esc(item.soldBuyer||'—')}${item.buyerPhone?'<br>'+esc(item.buyerPhone):''}</div></div>
+  <div class="rc-body"><table>${line('SKU',item.sku)}${line('Idol',item.name+(item.subcat?' · '+item.subcat:''))}${line('Gemstone',(item.stone||'')+(item.origin?' ('+item.origin+')':''))}${line('Dimensions',dims)}${line('Weight',wt)}${item.certified?line('Certificate',((item.certBody||'')+' '+(item.certNo||'')).trim()||'Certified'):''}</table>
+  ${disc?`<div style="display:flex;justify-content:space-between;font-size:12px;color:#9A8F85;margin-top:16px"><span>List price</span><span>${money(item.price)}</span></div><div style="display:flex;justify-content:space-between;font-size:12px;color:#1A6640;margin-top:4px"><span>Discount</span><span>− ${money(disc)}</span></div>`:''}
+  <div class="rc-total"><span class="lbl">Total Paid</span><span class="amt">${money(item.soldPrice)}</span></div></div>
+  <div class="rc-ft">Thank you for your purchase.<br>SoulStori · Where Faith Meets Artistry · Gemstone Divine Idols &amp; Sacred Art</div>
+</div><script>window.onload=function(){setTimeout(function(){window.print();},400);};<\/script></body></html>`);
+  w.document.close();
+}
 function printSingleQR(id){
   const item=items.find(i=>i.id===id);if(!item)return;
   catSel.clear();catSel.add(id);
@@ -1726,15 +1761,17 @@ function renderDash(){
   const maxP=inStock.length?Math.max(...inStock):0;
   const snap=`<div class="snap"><div class="snap-t"><div class="snap-l">Catalogue Value</div><div class="snap-v">₹${(val/100000).toFixed(1)}L</div></div><div class="snap-t"><div class="snap-l">Avg Price</div><div class="snap-v">${avgP?fp(avgP):'—'}</div></div><div class="snap-t"><div class="snap-l">Highest Price</div><div class="snap-v">${maxP?fp(maxP):'—'}</div></div><div class="snap-t"><div class="snap-l">Sold Value</div><div class="snap-v">${salesVal?'₹'+(salesVal/100000).toFixed(1)+'L':'—'}</div></div></div>`;
 
-  const todo=`<div class="todo"><div class="titem" onclick="toggleQ('no-price')"><div class="tic" style="background:var(--amber-l)">⚠️</div><div class="ttx">Pieces that need a <b>price</b></div><div class="tct">${noP}</div></div><div class="titem" onclick="toggleQ('no-photo')"><div class="tic" style="background:var(--blue-l)">📷</div><div class="ttx">Pieces that need a <b>photo</b></div><div class="tct">${noPh}</div></div><div class="titem" onclick="toggleQ('certified')"><div class="tic" style="background:var(--gold-p)">🏅</div><div class="ttx">Certified pieces</div><div class="tct">${cert}</div></div></div>`;
+  const _htoday=new Date().toISOString().slice(0,10);
+  const holdIsExp=i=>i.status==='reserved'&&i.reservedUntil&&i.reservedUntil<_htoday;
+  const expiredCount=items.filter(holdIsExp).length;
+  const todo=`<div class="todo">${expiredCount?`<div class="titem" onclick="toggleQ('reserved')"><div class="tic" style="background:var(--red-l)">⏰</div><div class="ttx"><b>${expiredCount}</b> hold${expiredCount!==1?'s':''} <b>expired</b> — follow up</div><div class="tct">${expiredCount}</div></div>`:''}<div class="titem" onclick="toggleQ('no-price')"><div class="tic" style="background:var(--amber-l)">⚠️</div><div class="ttx">Pieces that need a <b>price</b></div><div class="tct">${noP}</div></div><div class="titem" onclick="toggleQ('no-photo')"><div class="tic" style="background:var(--blue-l)">📷</div><div class="ttx">Pieces that need a <b>photo</b></div><div class="tct">${noPh}</div></div><div class="titem" onclick="toggleQ('certified')"><div class="tic" style="background:var(--gold-p)">🏅</div><div class="ttx">Certified pieces</div><div class="tct">${cert}</div></div></div>`;
 
   const sales=recentSales.length?recentSales.slice(0,6).map(i=>`<div class="arow" onclick="showDetail(${i.id})"><div class="aic">${getEM(i.name)}</div><div class="am"><div class="at">${esc(i.name)}${i.subcat?' · '+esc(i.subcat):''}</div><div class="as">${esc(i.sku)} · ${esc(i.soldDate||'')}</div></div>${showPrice?`<div style="font-family:'Cormorant Garamond',serif;font-weight:600;color:var(--stone);font-size:14px">${fpF(i.soldPrice)}</div>`:'<span style="font-size:10px;font-weight:600;color:var(--green);background:var(--green-l);padding:3px 9px;border-radius:20px">SOLD</span>'}</div>`).join(''):'<div class="dash-empty">No sales recorded yet.</div>';
 
   const locs=topL.length?topL.map(([l,c])=>`<div class="chip2">📍 <b>${esc(l)}</b> ${c}</div>`).join(''):'<div class="dash-empty">No locations recorded.</div>';
 
-  const holdsList=items.filter(i=>i.status==='reserved');
-  const _today=new Date().toISOString().slice(0,10);
-  const holdsRows=holdsList.length?holdsList.map(i=>{const exp=i.reservedUntil&&i.reservedUntil<_today;return `<div class="arow" onclick="showDetail(${i.id})"><div class="aic">${getEM(i.name)}</div><div class="am"><div class="at">${esc(i.name)} · ${esc(i.sku)}</div><div class="as">${i.reservedFor?'Held for '+esc(i.reservedFor):'On hold'}${i.reservedUntil?' · until '+esc(i.reservedUntil):''}</div></div>${exp?'<span style="font-size:10px;font-weight:600;color:var(--red);background:var(--red-l);padding:3px 9px;border-radius:20px">EXPIRED</span>':'<span style="font-size:10px;font-weight:600;color:var(--blue);background:var(--blue-l);padding:3px 9px;border-radius:20px">ON HOLD</span>'}</div>`;}).join(''):'<div class="dash-empty">No active holds.</div>';
+  const holdsList=items.filter(i=>i.status==='reserved').sort((a,b)=>(holdIsExp(b)?1:0)-(holdIsExp(a)?1:0));
+  const holdsRows=holdsList.length?holdsList.map(i=>{const exp=holdIsExp(i);return `<div class="arow" onclick="showDetail(${i.id})"><div class="aic">${getEM(i.name)}</div><div class="am"><div class="at">${esc(i.name)} · ${esc(i.sku)}</div><div class="as">${i.reservedFor?'Held for '+esc(i.reservedFor):'On hold'}${i.reservedUntil?' · until '+esc(i.reservedUntil):''}</div></div>${exp?'<span style="font-size:10px;font-weight:600;color:var(--red);background:var(--red-l);padding:3px 9px;border-radius:20px">EXPIRED</span>':'<span style="font-size:10px;font-weight:600;color:var(--blue);background:var(--blue-l);padding:3px 9px;border-radius:20px">ON HOLD</span>'}</div>`;}).join(''):'<div class="dash-empty">No active holds.</div>';
 
   const AGE_TH=6;
   const agingStock=items.filter(i=>i.status!=='sold'&&i.status!=='removed');
@@ -1760,7 +1797,7 @@ function renderDash(){
       <div class="panel"><div class="panel-h"><span>📏</span><div class="panel-t">Size Distribution</div></div><div class="vbars">${szBars}</div></div>
     </div>
     ${showPrice?`<div class="panel" style="margin-bottom:14px"><div class="panel-h"><span>💰</span><div class="panel-t">Value Snapshot</div></div>${snap}</div>`:''}
-    <div class="panel" style="margin-bottom:14px"><div class="panel-h"><span>🔒</span><div class="panel-t">Active Holds</div></div>${holdsRows}</div>
+    <div class="panel" style="margin-bottom:14px"><div class="panel-h" style="justify-content:space-between"><div style="display:flex;align-items:center;gap:8px"><span>🔒</span><div class="panel-t">Active Holds</div></div>${expiredCount?`<span style="font-size:11px;font-weight:600;color:var(--red);background:var(--red-l);padding:3px 10px;border-radius:20px">${expiredCount} expired</span>`:''}</div>${holdsRows}</div>
     ${agingPanel}
     <div class="dgrid c2">
       <div class="panel"><div class="panel-h"><span>📝</span><div class="panel-t">Needs Attention</div></div>${todo}</div>
