@@ -1809,6 +1809,7 @@ function renderDash(){
 // ═══════════════════════════════════════════════════════════════
 // PROFIT & LOSS
 // ═══════════════════════════════════════════════════════════════
+function monthRange(start,end){const out=[];let y=+start.split('-')[0],m=+start.split('-')[1];const ey=+end.split('-')[0],em=+end.split('-')[1];while((y<ey||(y===ey&&m<=em))&&out.length<60){out.push(y+'-'+String(m).padStart(2,'0'));m++;if(m>12){m=1;y++;}}return out;}
 function finStats(){
   const sold=items.filter(i=>i.status==='sold');
   const lost=items.filter(i=>i.status==='removed');
@@ -1847,9 +1848,27 @@ function renderFin(){
       <td style="text-align:center"><button onclick="printReceipt(${i.id})" title="Print receipt" style="background:var(--gold-p);border:1px solid var(--border);border-radius:7px;cursor:pointer;padding:4px 9px;font-size:14px;line-height:1">&#129534;</button></td>
     </tr>`;}).join('');
   const lossRows=s.lost.map(i=>`<tr onclick="showDetail(${i.id})" style="cursor:pointer"><td class="sku-c">${esc(i.sku)}</td><td>${esc(i.name)}</td><td><span style="font-size:10px;font-weight:600;color:${RED};background:var(--red-l);padding:3px 9px;border-radius:20px">${esc(i.removedReason||'—')}</span></td><td style="color:${RED};font-weight:600">${i.cost?finMoney(i.cost):dash}</td><td style="color:var(--stone-l)">${esc(i.removedDate||'')}</td></tr>`).join('');
+  const soldD=items.filter(i=>i.status==='sold'&&i.soldDate);
+  let salesChart='';
+  if(soldD.length){
+    const nn=v=>(typeof v==='number'&&!isNaN(v))?v:0;
+    const monthly={};
+    soldD.forEach(i=>{const mk=(i.soldDate||'').slice(0,7);if(mk.length!==7)return;if(!monthly[mk])monthly[mk]={rev:0,cnt:0};monthly[mk].rev+=nn(i.soldPrice);monthly[mk].cnt++;});
+    const keys=Object.keys(monthly).sort();
+    if(keys.length){
+      const endM=new Date().toISOString().slice(0,7);
+      const months=monthRange(keys[0], endM>keys[keys.length-1]?endM:keys[keys.length-1]).slice(-12);
+      const maxRev=Math.max(...months.map(mk=>monthly[mk]?monthly[mk].rev:0),1);
+      const ML=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      const mlabel=k=>{const a=k.split('-');return ML[Number(a[1])-1]+" '"+a[0].slice(2);};
+      const bars=months.map(k=>{const d=monthly[k]||{rev:0,cnt:0};const h=d.rev?Math.max(6,Math.round(d.rev/maxRev*100)):2;return `<div class="vbar" title="${mlabel(k)}: ₹${Math.round(d.rev).toLocaleString('en-IN')} · ${d.cnt} sold"><div class="vbar-ct" style="font-size:10px">${d.rev?fp(d.rev):''}</div><div class="vbar-track"><div class="vbar-fill" style="height:${h}%"></div></div><div class="vbar-x">${mlabel(k)}</div></div>`;}).join('');
+      salesChart=`<div class="panel" style="margin-bottom:14px"><div class="panel-h"><span>📈</span><div class="panel-t">Sales Over Time</div></div><div class="vbars" style="height:180px">${bars}</div><div style="font-size:11px;color:var(--stone-l);margin-top:8px">Monthly revenue (last ${months.length} month${months.length!==1?'s':''}) — hover a bar for details.</div></div>`;
+    }
+  }
   el('fin-body').innerHTML=`
     <div class="dh-head"><div><div class="dh-title">Profit &amp; Loss</div><div class="dh-sub" id="fin-sub">${s.sold.length} sold${s.pending?` · ${s.pending} awaiting final price`:''} · ${s.lost.length} lost/broken</div></div></div>
     <div class="snap" id="fin-summary" style="margin-bottom:16px">${finSummaryHTML()}</div>
+    ${salesChart}
     <div class="panel" style="margin-bottom:14px"><div class="panel-h"><span>🧮</span><div class="panel-t">Sales — fill in the prices for each sold piece</div></div>${s.sold.length?`<div style="overflow-x:auto"><table class="dtbl"><thead><tr><th>SKU</th><th>Idol</th><th>Cost</th><th>Selling Price</th><th>Quoted</th><th>Final Price</th><th>Profit</th><th></th></tr></thead><tbody>${rows}</tbody></table></div><div style="font-size:11px;color:var(--stone-l);margin-top:9px">Type into any box — <b>Cost</b>, <b>Selling Price</b>, <b>Quoted</b>, or the <b>Final Price</b>. Everything saves automatically and Profit updates instantly.</div>`:'<div class="dash-empty">No sales yet. Mark a piece <b>Sold</b> and it appears here.</div>'}</div>
     <div class="panel"><div class="panel-h"><span>📦</span><div class="panel-t">Losses — broken / lost / gifted</div></div>${s.lost.length?`<div style="overflow-x:auto"><table class="dtbl"><thead><tr><th>SKU</th><th>Idol</th><th>Reason</th><th>Cost Lost</th><th>Date</th></tr></thead><tbody>${lossRows}</tbody></table></div>`:'<div class="dash-empty">No losses recorded. 🎉</div>'}</div>`;
 }
