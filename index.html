@@ -1874,8 +1874,22 @@ function renderFin(){
       salesChart=`<div class="panel" style="margin-bottom:14px"><div class="panel-h"><span>📈</span><div class="panel-t">Sales Over Time</div></div>${svg}<div style="font-size:11px;color:var(--stone-l);margin-top:8px">Monthly revenue · last ${nM} month${nM!==1?'s':''} · total ${finMoney(totalRev)}</div></div>`;
     }
   }
+  const _pnn=v=>(typeof v==='number'&&!isNaN(v))?v:0;
+  const _soldAll=items.filter(i=>i.status==='sold');
+  const _ptoday=new Date().toISOString().slice(0,10);
+  const _wk=new Date(Date.now()-6*86400000).toISOString().slice(0,10);
+  const _pd=new Date(),_lm=new Date(_pd.getFullYear(),_pd.getMonth()-1,1).toISOString().slice(0,7),_tm=_ptoday.slice(0,7);
+  const _prev=pred=>_soldAll.filter(pred).reduce((s,i)=>s+_pnn(i.soldPrice),0);
+  const todayRev=_prev(i=>i.soldDate===_ptoday),todayCnt=_soldAll.filter(i=>i.soldDate===_ptoday).length;
+  const weekRev=_prev(i=>i.soldDate&&i.soldDate>=_wk&&i.soldDate<=_ptoday);
+  const monthRev=_prev(i=>(i.soldDate||'').slice(0,7)===_tm),lastRev=_prev(i=>(i.soldDate||'').slice(0,7)===_lm);
+  const growth=lastRev>0?Math.round((monthRev-lastRev)/lastRev*100):(monthRev>0?100:0);
+  const gBadge=`<span style="font-size:10px;font-weight:600;color:${growth>=0?'var(--green)':'var(--red)'};background:${growth>=0?'var(--green-l)':'var(--red-l)'};padding:2px 8px;border-radius:20px">${growth>=0?'&#8593;':'&#8595;'} ${Math.abs(growth)}%</span>`;
+  const pcard=(ic,label,val,sub,extra)=>`<div class="snap-t"><div style="display:flex;align-items:center;justify-content:space-between"><div class="snap-l">${label}</div><span style="font-size:15px">${ic}</span></div><div class="snap-v" style="margin-top:5px">${val}</div><div style="font-size:11px;color:var(--stone-l);margin-top:4px;display:flex;align-items:center;gap:6px">${sub}${extra||''}</div></div>`;
+  const periodRow=`<div class="snap" style="margin-bottom:14px">${pcard('💰','Today',finMoney(todayRev),todayCnt+' sold')}${pcard('📅','This Week',finMoney(weekRev),'last 7 days')}${pcard('📈','This Month',finMoney(monthRev),'vs last month',gBadge)}</div>`;
   el('fin-body').innerHTML=`
     <div class="dh-head"><div><div class="dh-title">Profit &amp; Loss</div><div class="dh-sub" id="fin-sub">${s.sold.length} sold${s.pending?` · ${s.pending} awaiting final price`:''} · ${s.lost.length} lost/broken</div></div></div>
+    ${periodRow}
     <div class="snap" id="fin-summary" style="margin-bottom:16px">${finSummaryHTML()}</div>
     ${salesChart}
     <div class="panel" style="margin-bottom:14px"><div class="panel-h"><span>🧮</span><div class="panel-t">Sales — fill in the prices for each sold piece</div></div>${s.sold.length?`<div style="overflow-x:auto"><table class="dtbl"><thead><tr><th>SKU</th><th>Idol</th><th>Cost</th><th>Selling Price</th><th>Quoted</th><th>Final Price</th><th>Profit</th><th></th></tr></thead><tbody>${rows}</tbody></table></div><div style="font-size:11px;color:var(--stone-l);margin-top:9px">Type into any box — <b>Cost</b>, <b>Selling Price</b>, <b>Quoted</b>, or the <b>Final Price</b>. Everything saves automatically and Profit updates instantly.</div>`:'<div class="dash-empty">No sales yet. Mark a piece <b>Sold</b> and it appears here.</div>'}</div>
