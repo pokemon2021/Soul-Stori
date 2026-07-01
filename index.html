@@ -1861,8 +1861,15 @@ function renderFin(){
       const maxRev=Math.max(...months.map(mk=>monthly[mk]?monthly[mk].rev:0),1);
       const ML=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
       const mlabel=k=>{const a=k.split('-');return ML[Number(a[1])-1]+" '"+a[0].slice(2);};
-      const bars=months.map(k=>{const d=monthly[k]||{rev:0,cnt:0};const h=d.rev?Math.max(6,Math.round(d.rev/maxRev*100)):2;return `<div class="vbar" title="${mlabel(k)}: ₹${Math.round(d.rev).toLocaleString('en-IN')} · ${d.cnt} sold"><div class="vbar-ct" style="font-size:10px">${d.rev?fp(d.rev):''}</div><div class="vbar-track"><div class="vbar-fill" style="height:${h}%"></div></div><div class="vbar-x">${mlabel(k)}</div></div>`;}).join('');
-      salesChart=`<div class="panel" style="margin-bottom:14px"><div class="panel-h"><span>📈</span><div class="panel-t">Sales Over Time</div></div><div class="vbars" style="height:180px">${bars}</div><div style="font-size:11px;color:var(--stone-l);margin-top:8px">Monthly revenue (last ${months.length} month${months.length!==1?'s':''}) — hover a bar for details.</div></div>`;
+      const W=700,H=200,padL=10,padR=10,padT=18,padB=26,plotW=W-padL-padR,plotH=H-padT-padB,nM=months.length;
+      const pts=months.map((k,idx)=>{const rev=monthly[k]?monthly[k].rev:0;const x=padL+(nM<=1?plotW/2:idx*(plotW/(nM-1)));const y=padT+(1-rev/maxRev)*plotH;return {x,y,rev,k};});
+      const lp=pts.map((p,i)=>(i?'L':'M')+p.x.toFixed(1)+','+p.y.toFixed(1)).join(' ');
+      const ap=lp+' L'+pts[pts.length-1].x.toFixed(1)+','+(padT+plotH)+' L'+pts[0].x.toFixed(1)+','+(padT+plotH)+' Z';
+      const dots=pts.map(p=>`<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="3.2" fill="#fff" stroke="var(--gold)" stroke-width="2"><title>${mlabel(p.k)}: ₹${Math.round(p.rev).toLocaleString('en-IN')} · ${(monthly[p.k]||{cnt:0}).cnt} sold</title></circle>`).join('');
+      const xl=pts.map(p=>`<text x="${p.x.toFixed(1)}" y="${H-8}" text-anchor="middle" font-size="10" fill="var(--stone-l)">${mlabel(p.k)}</text>`).join('');
+      const totalRev=months.reduce((t,k)=>t+(monthly[k]?monthly[k].rev:0),0);
+      const svg=`<svg viewBox="0 0 ${W} ${H}" width="100%" style="display:block;overflow:visible"><defs><linearGradient id="salesGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="var(--gold)" stop-opacity="0.3"/><stop offset="100%" stop-color="var(--gold)" stop-opacity="0.02"/></linearGradient></defs><path d="${ap}" fill="url(#salesGrad)"/><path d="${lp}" fill="none" stroke="var(--gold)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>${dots}${xl}</svg>`;
+      salesChart=`<div class="panel" style="margin-bottom:14px"><div class="panel-h"><span>📈</span><div class="panel-t">Sales Over Time</div></div>${svg}<div style="font-size:11px;color:var(--stone-l);margin-top:8px">Monthly revenue · last ${nM} month${nM!==1?'s':''} · total ${finMoney(totalRev)}</div></div>`;
     }
   }
   el('fin-body').innerHTML=`
