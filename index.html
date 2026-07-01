@@ -1809,6 +1809,7 @@ function renderDash(){
 // ═══════════════════════════════════════════════════════════════
 // PROFIT & LOSS
 // ═══════════════════════════════════════════════════════════════
+function smoothPath(pts){if(pts.length<2)return pts.length?`M${pts[0].x.toFixed(1)},${pts[0].y.toFixed(1)}`:'';let d=`M${pts[0].x.toFixed(1)},${pts[0].y.toFixed(1)}`;for(let i=0;i<pts.length-1;i++){const p0=pts[i-1]||pts[i],p1=pts[i],p2=pts[i+1],p3=pts[i+2]||pts[i+1];const c1x=p1.x+(p2.x-p0.x)/6,c1y=p1.y+(p2.y-p0.y)/6,c2x=p2.x-(p3.x-p1.x)/6,c2y=p2.y-(p3.y-p1.y)/6;d+=` C${c1x.toFixed(1)},${c1y.toFixed(1)} ${c2x.toFixed(1)},${c2y.toFixed(1)} ${p2.x.toFixed(1)},${p2.y.toFixed(1)}`;}return d;}
 function monthRange(start,end){const out=[];let y=+start.split('-')[0],m=+start.split('-')[1];const ey=+end.split('-')[0],em=+end.split('-')[1];while((y<ey||(y===ey&&m<=em))&&out.length<60){out.push(y+'-'+String(m).padStart(2,'0'));m++;if(m>12){m=1;y++;}}return out;}
 function finStats(){
   const sold=items.filter(i=>i.status==='sold');
@@ -1861,14 +1862,15 @@ function renderFin(){
       const maxRev=Math.max(...months.map(mk=>monthly[mk]?monthly[mk].rev:0),1);
       const ML=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
       const mlabel=k=>{const a=k.split('-');return ML[Number(a[1])-1]+" '"+a[0].slice(2);};
-      const W=700,H=200,padL=10,padR=10,padT=18,padB=26,plotW=W-padL-padR,plotH=H-padT-padB,nM=months.length;
+      const W=720,H=210,padL=46,padR=14,padT=14,padB=26,plotW=W-padL-padR,plotH=H-padT-padB,nM=months.length;
       const pts=months.map((k,idx)=>{const rev=monthly[k]?monthly[k].rev:0;const x=padL+(nM<=1?plotW/2:idx*(plotW/(nM-1)));const y=padT+(1-rev/maxRev)*plotH;return {x,y,rev,k};});
-      const lp=pts.map((p,i)=>(i?'L':'M')+p.x.toFixed(1)+','+p.y.toFixed(1)).join(' ');
-      const ap=lp+' L'+pts[pts.length-1].x.toFixed(1)+','+(padT+plotH)+' L'+pts[0].x.toFixed(1)+','+(padT+plotH)+' Z';
-      const dots=pts.map(p=>`<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="3.2" fill="#fff" stroke="var(--gold)" stroke-width="2"><title>${mlabel(p.k)}: ₹${Math.round(p.rev).toLocaleString('en-IN')} · ${(monthly[p.k]||{cnt:0}).cnt} sold</title></circle>`).join('');
-      const xl=pts.map(p=>`<text x="${p.x.toFixed(1)}" y="${H-8}" text-anchor="middle" font-size="10" fill="var(--stone-l)">${mlabel(p.k)}</text>`).join('');
+      const grid=[0,1,2,3,4].map(g=>{const fr=g/4,val=maxRev*fr,y=padT+plotH*(1-fr);return `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W-padR}" y2="${y.toFixed(1)}" stroke="rgba(184,147,90,.16)" stroke-width="1"/><text x="${(padL-8).toFixed(0)}" y="${(y+3).toFixed(1)}" text-anchor="end" font-size="9.5" fill="var(--stone-l)">${val>=1000?fp(Math.round(val)):'₹'+Math.round(val)}</text>`;}).join('');
+      const lp=smoothPath(pts);
+      const ap=lp+` L${pts[pts.length-1].x.toFixed(1)},${(padT+plotH).toFixed(1)} L${pts[0].x.toFixed(1)},${(padT+plotH).toFixed(1)} Z`;
+      const dots=pts.map(p=>`<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="4" fill="#fff" stroke="var(--gold)" stroke-width="2.5"><title>${mlabel(p.k)}: ₹${Math.round(p.rev).toLocaleString('en-IN')} · ${(monthly[p.k]||{cnt:0}).cnt} sold</title></circle>`).join('');
+      const xl=pts.map(p=>`<text x="${p.x.toFixed(1)}" y="${(H-7).toFixed(1)}" text-anchor="middle" font-size="10" fill="var(--stone-l)">${mlabel(p.k)}</text>`).join('');
       const totalRev=months.reduce((t,k)=>t+(monthly[k]?monthly[k].rev:0),0);
-      const svg=`<svg viewBox="0 0 ${W} ${H}" width="100%" style="display:block;overflow:visible"><defs><linearGradient id="salesGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="var(--gold)" stop-opacity="0.3"/><stop offset="100%" stop-color="var(--gold)" stop-opacity="0.02"/></linearGradient></defs><path d="${ap}" fill="url(#salesGrad)"/><path d="${lp}" fill="none" stroke="var(--gold)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>${dots}${xl}</svg>`;
+      const svg=`<svg viewBox="0 0 ${W} ${H}" width="100%" style="display:block;overflow:visible"><defs><linearGradient id="salesGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="var(--gold)" stop-opacity="0.22"/><stop offset="100%" stop-color="var(--gold)" stop-opacity="0.02"/></linearGradient></defs>${grid}<path d="${ap}" fill="url(#salesGrad)"/><path d="${lp}" fill="none" stroke="var(--gold)" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"/>${dots}${xl}</svg>`;
       salesChart=`<div class="panel" style="margin-bottom:14px"><div class="panel-h"><span>📈</span><div class="panel-t">Sales Over Time</div></div>${svg}<div style="font-size:11px;color:var(--stone-l);margin-top:8px">Monthly revenue · last ${nM} month${nM!==1?'s':''} · total ${finMoney(totalRev)}</div></div>`;
     }
   }
