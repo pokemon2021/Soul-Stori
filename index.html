@@ -717,6 +717,8 @@ input:checked+.tog-sl:before{transform:translateX(15px)}
       <div class="fgroup full" style="margin-bottom:12px"><label class="flabel">Sale Date</label><input class="finput" id="sell-date" type="date"></div>
       <div class="fgroup full" style="margin-bottom:12px"><label class="flabel">Buyer / Channel (optional)</label><input class="finput" id="sell-buyer" placeholder="Buyer name, WhatsApp, store&#8230;"></div>
       <div class="fgroup full" style="margin-bottom:12px"><label class="flabel">Phone / WhatsApp (optional)</label><input class="finput" id="sell-phone" placeholder="Contact number"></div>
+      <div class="fgroup full" style="margin-bottom:12px"><label class="flabel">Payment</label><select class="finput fsel2" id="sell-paystatus" onchange="onPayStatusChange()"><option value="paid">Paid in full</option><option value="partial">Partial payment (advance)</option><option value="pending">Payment pending</option></select></div>
+      <div class="fgroup full" id="sell-paid-wrap" style="margin-bottom:12px;display:none"><label class="flabel">Amount received so far (&#8377;)</label><input class="finput" id="sell-paid" type="number" placeholder="Advance / partial amount"></div>
       <div class="fgroup full"><label class="flabel">Notes (optional)</label><textarea class="finput ftarea" id="sell-note" placeholder="Payment method, special instructions&#8230;" style="min-height:55px"></textarea></div>
     </div>
     <div class="mod-ft"><button class="btn" onclick="hideSellMod()">Cancel</button><button class="btn btn-sell" onclick="confirmSell()">&#128176; Confirm Sale</button></div>
@@ -1075,8 +1077,8 @@ async function dbDelete(id) {
   }catch(e){setSyncStatus('err','Delete failed');console.error(e);}
 }
 
-function dbRowToItem(r){return{id:r.id,sku:r.sku||'',loc:r.loc||'',name:r.name||'',subcat:r.subcat||'',category:r.category||'',stone:r.stone||'',stoneCat:r.stone_cat||'',origin:r.origin||'',wtCts:r.wt_cts,wtKg:r.wt_kg,ht:r.ht,width:r.width,depth:r.depth,price:r.price,listPrice:r.list_price,priceUSD:r.price_usd,cost:r.cost,por:!!r.por,certified:!!r.certified,certNo:r.cert_no||'',certBody:r.cert_body||'',hasPhoto:!!r.has_photo,photoUrl:r.photo_url||'',status:r.status||'available',sizecat:r.sizecat||'',chWeb:!!r.ch_web,chEtsy:!!r.ch_etsy,chWA:!!r.ch_wa,notes:r.notes||'',soldPrice:r.sold_price,soldDate:r.sold_date,soldBuyer:r.sold_buyer||'',buyerPhone:r.buyer_phone||'',quotedPrice:r.quoted_price,reservedFor:r.reserved_for||'',reservedUntil:r.reserved_until,removedReason:r.removed_reason||'',removedDate:r.removed_date,createdAt:r.created_at};}
-function itemToDbRow(item){return{id:item.id,sku:item.sku,loc:item.loc,name:item.name,subcat:item.subcat,category:item.category,stone:item.stone,stone_cat:item.stoneCat,origin:item.origin,wt_cts:item.wtCts||null,wt_kg:item.wtKg||null,ht:item.ht||null,width:item.width||null,depth:item.depth||null,price:item.price||null,list_price:item.listPrice||null,price_usd:item.priceUSD||null,cost:item.cost||null,por:!!item.por,certified:!!item.certified,cert_no:item.certNo||null,cert_body:item.certBody||null,has_photo:!!item.hasPhoto,photo_url:item.photoUrl||null,status:item.status||'available',sizecat:item.sizecat||null,ch_web:!!item.chWeb,ch_etsy:!!item.chEtsy,ch_wa:!!item.chWA,notes:item.notes||null,sold_price:item.soldPrice||null,sold_date:item.soldDate||null,sold_buyer:item.soldBuyer||null,buyer_phone:item.buyerPhone||null,quoted_price:item.quotedPrice||null,reserved_for:item.reservedFor||null,reserved_until:item.reservedUntil||null,removed_reason:item.removedReason||null,removed_date:item.removedDate||null};}
+function dbRowToItem(r){return{id:r.id,sku:r.sku||'',loc:r.loc||'',name:r.name||'',subcat:r.subcat||'',category:r.category||'',stone:r.stone||'',stoneCat:r.stone_cat||'',origin:r.origin||'',wtCts:r.wt_cts,wtKg:r.wt_kg,ht:r.ht,width:r.width,depth:r.depth,price:r.price,listPrice:r.list_price,priceUSD:r.price_usd,cost:r.cost,por:!!r.por,certified:!!r.certified,certNo:r.cert_no||'',certBody:r.cert_body||'',hasPhoto:!!r.has_photo,photoUrl:r.photo_url||'',status:r.status||'available',sizecat:r.sizecat||'',chWeb:!!r.ch_web,chEtsy:!!r.ch_etsy,chWA:!!r.ch_wa,notes:r.notes||'',soldPrice:r.sold_price,soldDate:r.sold_date,soldBuyer:r.sold_buyer||'',buyerPhone:r.buyer_phone||'',paymentStatus:r.payment_status||'',amountPaid:r.amount_paid,quotedPrice:r.quoted_price,reservedFor:r.reserved_for||'',reservedUntil:r.reserved_until,removedReason:r.removed_reason||'',removedDate:r.removed_date,createdAt:r.created_at};}
+function itemToDbRow(item){return{id:item.id,sku:item.sku,loc:item.loc,name:item.name,subcat:item.subcat,category:item.category,stone:item.stone,stone_cat:item.stoneCat,origin:item.origin,wt_cts:item.wtCts||null,wt_kg:item.wtKg||null,ht:item.ht||null,width:item.width||null,depth:item.depth||null,price:item.price||null,list_price:item.listPrice||null,price_usd:item.priceUSD||null,cost:item.cost||null,por:!!item.por,certified:!!item.certified,cert_no:item.certNo||null,cert_body:item.certBody||null,has_photo:!!item.hasPhoto,photo_url:item.photoUrl||null,status:item.status||'available',sizecat:item.sizecat||null,ch_web:!!item.chWeb,ch_etsy:!!item.chEtsy,ch_wa:!!item.chWA,notes:item.notes||null,sold_price:item.soldPrice||null,sold_date:item.soldDate||null,sold_buyer:item.soldBuyer||null,buyer_phone:item.buyerPhone||null,payment_status:item.paymentStatus||null,amount_paid:item.amountPaid!=null?item.amountPaid:null,quoted_price:item.quotedPrice||null,reserved_for:item.reservedFor||null,reserved_until:item.reservedUntil||null,removed_reason:item.removedReason||null,removed_date:item.removedDate||null};}
 
 // ── MOVEMENT LOG ───────────────────────────────────────────────
 async function logMove(sku, itemName, action, notes) {
@@ -1195,6 +1197,8 @@ function renderTasks(){
   if(expHolds) auto.push({ic:'⏰',bg:'var(--red-l)',tx:`<b>${expHolds}</b> expired hold${expHolds!==1?'s':''} to follow up`,on:"toggleQ('reserved')"});
   if(noPh) auto.push({ic:'📷',bg:'var(--blue-l)',tx:`<b>${noPh}</b> piece${noPh!==1?'s':''} need photos`,on:"toggleQ('no-photo')"});
   if(noP) auto.push({ic:'⚠️',bg:'var(--amber-l)',tx:`<b>${noP}</b> piece${noP!==1?'s':''} need prices`,on:"toggleQ('no-price')"});
+  const _dueList=items.filter(i=>i.status==='sold'&&i.paymentStatus&&i.paymentStatus!=='paid');
+  if(_dueList.length){const _owed=_dueList.reduce((s,i)=>s+Math.max(0,(i.soldPrice||0)-(i.amountPaid||0)),0);auto.push({ic:'💳',bg:'var(--gold-p)',tx:`<b>₹${Math.round(_owed).toLocaleString('en-IN')}</b> outstanding from <b>${_dueList.length}</b> sale${_dueList.length!==1?'s':''}`,on:"toggleQ('sold')"});}
   const autoHTML=auto.length?auto.map(a=>`<div class="titem" onclick="${a.on}"><div class="tic" style="background:${a.bg}">${a.ic}</div><div class="ttx">${a.tx}</div><div class="tct">→</div></div>`).join(''):'<div class="dash-empty">Nothing outstanding — inventory looks complete. 🎉</div>';
   const openT=tasks.filter(t=>!t.done), doneT=tasks.filter(t=>t.done);
   if(el('nc-tasks')) el('nc-tasks').textContent=openT.length;
@@ -1437,7 +1441,7 @@ function showDetail(id){
   el('d-img-box').style.cursor=item.photoUrl?'zoom-in':'';
   el('d-sku').textContent=item.sku;
   el('d-name').textContent=item.name+(item.subcat?' · '+item.subcat:'');
-  el('d-sub').textContent=[item.stone,item.stoneCat,item.origin].filter(Boolean).join(' · ')+(item.status==='reserved'&&(item.reservedFor||item.reservedUntil)?'  ·  🔒 Held'+(item.reservedFor?' for '+item.reservedFor:'')+(item.reservedUntil?' until '+item.reservedUntil:''):'');
+  el('d-sub').textContent=[item.stone,item.stoneCat,item.origin].filter(Boolean).join(' · ')+(item.status==='reserved'&&(item.reservedFor||item.reservedUntil)?'  ·  🔒 Held'+(item.reservedFor?' for '+item.reservedFor:'')+(item.reservedUntil?' until '+item.reservedUntil:''):'')+(item.status==='sold'&&item.paymentStatus&&item.paymentStatus!=='paid'?'  ·  💳 '+(item.paymentStatus==='partial'?('Partial · ₹'+Math.round(Math.max(0,(item.soldPrice||0)-(item.amountPaid||0))).toLocaleString('en-IN')+' due'):'Payment pending'):'');
   const showPrice=userRole!=='warehouse';
   el('d-price').textContent=!showPrice?'—':item.price?fpF(item.price):item.por?'Price on Request':'Price not set';
   el('d-pmeta').textContent=showPrice&&item.listPrice&&item.listPrice!==item.price?'MRP: '+fpF(item.listPrice):'';
@@ -1572,7 +1576,8 @@ function shrinkImage(file){
 // ═══════════════════════════════════════════════════════════════
 // SELL / REMOVE WORKFLOW
 // ═══════════════════════════════════════════════════════════════
-function openSellMod(id){const item=items.find(i=>i.id===id);if(!item)return;sellId=id;el('sell-summary').innerHTML=`<strong>${esc(item.sku)}</strong> — ${esc(item.name)}${item.stone?' · '+esc(item.stone):''}`;setV('sell-price',item.price||'');setV('sell-quoted',item.price||'');el('sell-date').value=new Date().toISOString().slice(0,10);setV('sell-buyer','');setV('sell-phone','');setV('sell-note','');el('sellModOv').classList.remove('hidden');}
+function onPayStatusChange(){const w=el('sell-paid-wrap');if(w)w.style.display=el('sell-paystatus').value==='partial'?'':'none';}
+function openSellMod(id){const item=items.find(i=>i.id===id);if(!item)return;sellId=id;el('sell-summary').innerHTML=`<strong>${esc(item.sku)}</strong> — ${esc(item.name)}${item.stone?' · '+esc(item.stone):''}`;setV('sell-price',item.price||'');setV('sell-quoted',item.price||'');el('sell-date').value=new Date().toISOString().slice(0,10);setV('sell-buyer','');setV('sell-phone','');setV('sell-note','');el('sell-paystatus').value='paid';setV('sell-paid','');onPayStatusChange();el('sellModOv').classList.remove('hidden');}
 function hideSellMod(){el('sellModOv').classList.add('hidden');sellId=null;}
 async function confirmSell(){
   const item=items.find(i=>i.id===sellId);if(!item)return;
@@ -1580,6 +1585,7 @@ async function confirmSell(){
   const date=el('sell-date').value||new Date().toISOString().slice(0,10);
   const buyer=el('sell-buyer').value.trim(),note=el('sell-note').value.trim();
   item.status='sold';item.soldPrice=price;item.soldDate=date;item.soldBuyer=buyer;item.buyerPhone=el('sell-phone').value.trim();item.quotedPrice=pfN('sell-quoted');
+  const _ps=el('sell-paystatus').value;item.paymentStatus=_ps;item.amountPaid=_ps==='paid'?(price||null):_ps==='pending'?0:(pfN('sell-paid')||0);
   if(note)item.notes=(item.notes?item.notes+'\n':'')+`[SOLD ${date}] ${note}`;
   const sid=sellId;hideSellMod();runFilter();if(detId===sid)showDetail(sid);
   await upsertItem(item);
@@ -1676,6 +1682,9 @@ function printReceipt(id){
   const money=v=>v?'₹'+Number(v).toLocaleString('en-IN'):'—';
   const dims=[item.ht&&item.ht+'"H',item.width&&item.width+'"W',item.depth&&item.depth+'"D'].filter(Boolean).join(' × ')||'—';
   const wt=dispWt(item);
+  const _rpaid=item.paymentStatus==='paid'?(item.soldPrice||0):(item.amountPaid||0);
+  const _rbal=Math.max(0,(item.soldPrice||0)-_rpaid);
+  const payHTML=(item.paymentStatus&&item.paymentStatus!=='paid'&&_rbal>0)?`<div style="display:flex;justify-content:space-between;font-size:12px;color:#5A544E;margin-top:8px"><span>Amount received</span><span>${money(_rpaid)}</span></div><div style="display:flex;justify-content:space-between;font-size:12.5px;color:#8B2020;font-weight:600;margin-top:3px"><span>Balance due</span><span>${money(_rbal)}</span></div>`:'';
   const line=(l,v)=>(v&&v!=='—')?`<tr><td class="l">${l}</td><td class="v">${esc(String(v))}</td></tr>`:'';
   const disc=(item.price&&item.soldPrice&&item.price>item.soldPrice)?item.price-item.soldPrice:0;
   const today=new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'long',year:'numeric'});
@@ -1698,7 +1707,7 @@ td.l{color:#9A8F85;width:150px;text-transform:uppercase;font-size:10px;letter-sp
   <div class="rc-meta"><div><b>Receipt No:</b> ${esc(item.sku)}<br><b>Date:</b> ${esc(item.soldDate||today)}</div><div style="text-align:right"><b>Billed to</b><br>${esc(item.soldBuyer||'—')}${item.buyerPhone?'<br>'+esc(item.buyerPhone):''}</div></div>
   <div class="rc-body"><table>${line('SKU',item.sku)}${line('Idol',item.name+(item.subcat?' · '+item.subcat:''))}${line('Gemstone',(item.stone||'')+(item.origin?' ('+item.origin+')':''))}${line('Dimensions',dims)}${line('Weight',wt)}${item.certified?line('Certificate',((item.certBody||'')+' '+(item.certNo||'')).trim()||'Certified'):''}</table>
   ${disc?`<div style="display:flex;justify-content:space-between;font-size:12px;color:#9A8F85;margin-top:16px"><span>List price</span><span>${money(item.price)}</span></div><div style="display:flex;justify-content:space-between;font-size:12px;color:#1A6640;margin-top:4px"><span>Discount</span><span>− ${money(disc)}</span></div>`:''}
-  <div class="rc-total"><span class="lbl">Total Paid</span><span class="amt">${money(item.soldPrice)}</span></div></div>
+  <div class="rc-total"><span class="lbl">Total</span><span class="amt">${money(item.soldPrice)}</span></div>${payHTML}</div>
   <div class="rc-ft">Thank you for your purchase.<br>SoulStori · Where Faith Meets Artistry · Gemstone Divine Idols &amp; Sacred Art</div>
 </div><script>window.onload=function(){setTimeout(function(){window.print();},400);};<\/script></body></html>`);
   w.document.close();
