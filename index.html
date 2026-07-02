@@ -390,6 +390,18 @@ input:checked+.tog-sl:before{transform:translateX(15px)}
 .fchip button{background:rgba(44,40,37,.1);border:none;color:var(--stone);width:17px;height:17px;border-radius:50%;cursor:pointer;font-size:12px;line-height:1;display:flex;align-items:center;justify-content:center}
 .fchip button:hover{background:var(--red-l);color:var(--red)}
 .fchip-clr{background:none;border:none;color:var(--gold);font-size:11.5px;cursor:pointer;text-decoration:underline;padding:4px 6px}
+.task-row{display:flex;align-items:flex-start;gap:11px;padding:10px 0;border-bottom:1px solid rgba(184,147,90,.1)}
+.task-row:last-child{border-bottom:none}
+.task-chk{position:relative;flex-shrink:0;width:20px;height:20px;margin-top:1px;cursor:pointer}
+.task-chk input{position:absolute;opacity:0;width:20px;height:20px;margin:0;cursor:pointer}
+.task-chk span{position:absolute;inset:0;border:2px solid var(--gold);border-radius:6px}
+.task-chk input:checked+span{background:var(--gold)}
+.task-chk input:checked+span:after{content:'✓';position:absolute;inset:0;color:#fff;font-size:13px;display:flex;align-items:center;justify-content:center}
+.task-tx{flex:1;font-size:13.5px;color:var(--stone);line-height:1.4}
+.task-meta{font-size:10.5px;color:var(--stone-l);margin-top:2px}
+.task-row.done .task-tx{text-decoration:line-through;color:var(--stone-l)}
+.task-del{background:none;border:none;color:var(--stone-l);font-size:18px;cursor:pointer;padding:0 4px;line-height:1}
+.task-del:hover{color:var(--red)}
 @media(max-width:980px){.dgrid.c3{grid-template-columns:1fr 1fr}}
 @media(max-width:680px){.dgrid.c3{grid-template-columns:1fr}.rd-row{gap:14px}}
 
@@ -495,6 +507,7 @@ input:checked+.tog-sl:before{transform:translateX(15px)}
   <div class="nav" id="nav-scan" onclick="goScan()"><span class="nav-ic">&#128247;</span>Quick Scan / Check</div>
   <div class="nav" id="nav-dash" onclick="goDash()"><span class="nav-ic">&#128202;</span>Dashboard</div>
   <div class="nav" id="nav-move" onclick="goMoves()"><span class="nav-ic">&#128260;</span>Movement Log</div>
+  <div class="nav" id="nav-tasks" onclick="goTasks()"><span class="nav-ic">&#9989;</span>To-Do<span class="nc" id="nc-tasks">0</span></div>
   <div class="nav" id="nav-fin" onclick="goFin()"><span class="nav-ic">&#128200;</span>Profit &amp; Loss</div>
   <div class="nav" id="nav-cust" onclick="goCust()"><span class="nav-ic">&#128100;</span>Customers</div>
   <div class="sb-sec">Quick Filters</div>
@@ -585,6 +598,10 @@ input:checked+.tog-sl:before{transform:translateX(15px)}
     <div style="padding:14px 18px" id="move-body">
       <div class="empty"><div class="empty-ic">&#128260;</div><div class="empty-t">Loading movement log&#8230;</div></div>
     </div>
+  </div>
+  <div id="view-tasks" class="hidden">
+    <div class="toolbar"><div class="tb-title">&#9989; Daily Priorities</div></div>
+    <div class="dash" id="tasks-body"></div>
   </div>
   <div id="view-fin" class="hidden">
     <div class="toolbar"><div class="tb-title">Profit &amp; Loss</div><div class="tb-r"><button class="btn" onclick="renderFin()">&#8635; Refresh</button><button class="btn" onclick="exportFin()">&#11015; Export CSV</button></div></div>
@@ -831,6 +848,7 @@ const catSel=new Set();
 let catModeOn=false, currentUser=null, userRole='';
 const signedUrlCache={};
 let sellId=null, removeId=null, reserveId=null;
+let tasks=[];
 
 function el(id){ return document.getElementById(id); }
 
@@ -1108,6 +1126,7 @@ function finishLoad(){
       el('main-app').style.display='flex';
       fillDropdowns(); runFilter();
       openPendingSku();
+      loadTasks();
       // Sign URLs progressively in background after app is visible
       const photoFiles=items.filter(i=>i.photoUrl&&!i.photoUrl.startsWith('http')).map(i=>i.photoUrl);
       if(photoFiles.length) {
@@ -1134,12 +1153,60 @@ function setC(id,val){el(id).checked=!!val;}
 // ═══════════════════════════════════════════════════════════════
 // VIEWS
 // ═══════════════════════════════════════════════════════════════
-function showOnly(v){if(v!=='scan')stopCameraScan();['inv','scan','dash','move','fin','cust'].forEach(x=>el('view-'+x).classList.toggle('hidden',x!==v));}
+function showOnly(v){if(v!=='scan')stopCameraScan();['inv','scan','dash','move','fin','cust','tasks'].forEach(x=>el('view-'+x).classList.toggle('hidden',x!==v));}
 function setNav(id){document.querySelectorAll('.nav').forEach(n=>n.classList.remove('active'));const e=el(id);if(e)e.classList.add('active');}
 function goHome(){QF=null;SC=null;SD=1;catModeOn=false;el('srchInp').value='';el('srchX').classList.add('hidden');['fIdol','fStone','fSize','fLoc','fStatus'].forEach(id=>el(id).value='');showOnly('inv');setNav('nav-inv');el('grid-c').classList.remove('cat-mode');el('cat-mode-bar').classList.add('hidden');el('btn-cat-mode').classList.remove('hidden');runFilter();}
 function goScan(){showOnly('scan');setNav('nav-scan');setTimeout(()=>el('scan-inp').focus(),50);}
 function goDash(){QF=null;showOnly('dash');setNav('nav-dash');runFilter();renderDash();}
 function goMoves(){showOnly('move');setNav('nav-move');loadMoves();}
+function goTasks(){showOnly('tasks');setNav('nav-tasks');loadTasks();}
+async function loadTasks(){
+  try{ const res=await sbFetch('ss_tasks?select=*&order=done.asc,created_at.desc&limit=300'); tasks=res.ok?await res.json():[]; }catch(e){ tasks=[]; }
+  renderTasks();
+}
+async function addTask(){
+  const t=el('task-input').value.trim(); if(!t)return;
+  el('task-input').value='';
+  try{
+    const res=await fetch(SB_URL+'/rest/v1/ss_tasks',{method:'POST',headers:sbH({'Prefer':'return=representation'}),body:JSON.stringify({text:t,created_by:(currentUser&&currentUser.email)||'—'})});
+    if(!res.ok) throw new Error(await res.text());
+    const r=await res.json(); if(r&&r[0]) tasks.unshift(r[0]);
+  }catch(e){ alert('Could not add task — has the ss_tasks table been created in Supabase?\n\n'+(e&&e.message?e.message:e)); }
+  renderTasks();
+}
+async function toggleTask(id,done){
+  const task=tasks.find(t=>t.id===id); if(task){task.done=done;task.done_by=done?((currentUser&&currentUser.email)||'—'):null;}
+  renderTasks();
+  try{ await fetch(SB_URL+'/rest/v1/ss_tasks?id=eq.'+id,{method:'PATCH',headers:sbH({'Prefer':'return=minimal'}),body:JSON.stringify({done,done_by:done?((currentUser&&currentUser.email)||'—'):null})}); }catch(e){console.warn('task toggle',e);}
+}
+async function deleteTask(id){
+  if(!confirm('Delete this task?'))return;
+  tasks=tasks.filter(t=>t.id!==id); renderTasks();
+  try{ await sbFetch('ss_tasks?id=eq.'+id,{method:'DELETE',headers:sbH({})}); }catch(e){console.warn('task delete',e);}
+}
+function renderTasks(){
+  const noPh=items.filter(i=>!i.hasPhoto).length;
+  const noP=items.filter(i=>!i.price&&!i.por&&i.status!=='sold').length;
+  const _t=new Date().toISOString().slice(0,10);
+  const expHolds=items.filter(i=>i.status==='reserved'&&i.reservedUntil&&i.reservedUntil<_t).length;
+  const auto=[];
+  if(expHolds) auto.push({ic:'⏰',bg:'var(--red-l)',tx:`<b>${expHolds}</b> expired hold${expHolds!==1?'s':''} to follow up`,on:"toggleQ('reserved')"});
+  if(noPh) auto.push({ic:'📷',bg:'var(--blue-l)',tx:`<b>${noPh}</b> piece${noPh!==1?'s':''} need photos`,on:"toggleQ('no-photo')"});
+  if(noP) auto.push({ic:'⚠️',bg:'var(--amber-l)',tx:`<b>${noP}</b> piece${noP!==1?'s':''} need prices`,on:"toggleQ('no-price')"});
+  const autoHTML=auto.length?auto.map(a=>`<div class="titem" onclick="${a.on}"><div class="tic" style="background:${a.bg}">${a.ic}</div><div class="ttx">${a.tx}</div><div class="tct">→</div></div>`).join(''):'<div class="dash-empty">Nothing outstanding — inventory looks complete. 🎉</div>';
+  const openT=tasks.filter(t=>!t.done), doneT=tasks.filter(t=>t.done);
+  if(el('nc-tasks')) el('nc-tasks').textContent=openT.length;
+  const row=t=>`<div class="task-row ${t.done?'done':''}"><label class="task-chk"><input type="checkbox" ${t.done?'checked':''} onchange="toggleTask(${t.id},this.checked)"><span></span></label><div class="task-tx">${esc(t.text)}<div class="task-meta">${t.done?('done by '+esc(t.done_by||'—')):('added by '+esc(t.created_by||'—'))}</div></div><button class="task-del" onclick="deleteTask(${t.id})" title="Delete">&times;</button></div>`;
+  if(!el('tasks-body'))return;
+  el('tasks-body').innerHTML=`
+    <div class="dh-head"><div><div class="dh-title">Daily Priorities</div><div class="dh-sub">${openT.length} to do · ${doneT.length} done</div></div></div>
+    <div class="panel" style="margin-bottom:14px"><div class="panel-h"><span>⚡</span><div class="panel-t">Suggested — from your inventory</div></div><div class="todo">${autoHTML}</div></div>
+    <div class="panel"><div class="panel-h"><span>✅</span><div class="panel-t">Team To-Do</div></div>
+      <div style="display:flex;gap:8px;margin-bottom:12px"><input class="finput" id="task-input" placeholder="Add a task for the team&#8230;" onkeydown="if(event.key==='Enter')addTask()" style="flex:1"><button class="btn btn-dark" onclick="addTask()">Add</button></div>
+      ${openT.length?openT.map(row).join(''):'<div class="dash-empty">No open tasks. Add one above.</div>'}
+      ${doneT.length?`<div style="font-size:11px;color:var(--stone-l);margin:16px 0 6px">Completed (${doneT.length})</div>${doneT.map(row).join('')}`:''}
+    </div>`;
+}
 function goFin(){if(userRole==='warehouse'){alert('Profit & Loss is for admins / accounts only.');return;}QF=null;showOnly('fin');setNav('nav-fin');renderFin();}
 function goCust(){if(userRole==='warehouse'){alert('Customers is for admins / accounts only.');return;}QF=null;showOnly('cust');setNav('nav-cust');renderCust();}
 function renderCust(){
