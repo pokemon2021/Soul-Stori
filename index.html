@@ -615,6 +615,7 @@ input:checked+.tog-sl:before{transform:translateX(15px)}
     </div>
     <div class="det-acts" id="d-acts">
       <button class="btn btn-dark" id="d-edit-btn">&#9999;&#65039; Edit</button>
+      <button class="btn" id="d-dup-btn">&#10697; Duplicate</button>
       <button class="btn" id="d-res-btn">&#128338; Reserve</button>
       <button class="btn btn-sell" id="d-sell-btn">&#128176; Sell</button>
       <button class="btn btn-remove" id="d-remove-btn">&#128230; Remove</button>
@@ -1395,6 +1396,7 @@ function showDetail(id){
   el('d-edit-btn').style.display=isAdmin?'':'none';
   el('d-del-btn').style.display=isAdmin?'':'none';
   el('d-edit-btn').onclick=()=>openEdit(id);
+  if(el('d-dup-btn')){el('d-dup-btn').onclick=()=>openDuplicate(id);el('d-dup-btn').style.display=isAdmin?'':'none';}
   el('d-res-btn').onclick=()=>openReserveMod(id);
   el('d-sell-btn').onclick=()=>openSellMod(id);
   el('d-remove-btn').onclick=()=>openRemoveMod(id);
@@ -1412,6 +1414,7 @@ async function delItem(id){if(!confirm('Delete this piece permanently? Use Sell 
 // ADD / EDIT
 // ═══════════════════════════════════════════════════════════════
 function openAdd(){if(userRole!=='admin'){alert('Only admins can add new stock. Contact Aj to get access.');return;}editId=null;el('mod-t').textContent='Add New Stock';['f-sku','f-loc','f-name','f-sub','f-cat','f-stone','f-orig','f-certno','f-certb','f-wcts','f-wkg','f-ht','f-w','f-d','f-cost','f-lp','f-price','f-usd','f-notes','f-photo-url'].forEach(id=>el(id).value='');['f-cert','f-por','f-photo','f-web','f-etsy','f-wa'].forEach(id=>el(id).checked=false);el('f-scat').value='';el('f-status').value='available';el('f-wunit').value='kg';el('photo-status').textContent='';refreshPhotoPreview();el('modOv').classList.remove('hidden');}
+function openDuplicate(id){const item=items.find(i=>i.id===id);if(!item){alert('Item not found.');return;}if(userRole!=='admin'){alert('Only admins can add new stock.');return;}editId=null;el('mod-t').textContent='Duplicate — new piece (enter a new SKU)';setV('f-sku','');setV('f-loc',item.loc);setV('f-name',item.name);setV('f-sub',item.subcat);setV('f-cat',item.category);setV('f-stone',item.stone);setV('f-orig',item.origin);setV('f-certno','');setV('f-certb',item.certBody);setV('f-wcts',item.wtCts);setV('f-wkg',item.wtKg);setV('f-ht',item.ht);setV('f-w',item.width);setV('f-d',item.depth);setV('f-cost',item.cost);setV('f-lp',item.listPrice);setV('f-price',item.price);setV('f-usd',item.priceUSD);setV('f-notes',item.notes);setV('f-photo-url','');el('f-scat').value=item.stoneCat||'';el('f-status').value='available';el('f-wunit').value='kg';setC('f-cert',item.certified);setC('f-por',item.por);setC('f-photo',false);setC('f-web',item.chWeb);setC('f-etsy',item.chEtsy);setC('f-wa',item.chWA);el('photo-status').textContent='';refreshPhotoPreview();el('modOv').classList.remove('hidden');setTimeout(()=>el('f-sku').focus(),50);}
 function openEdit(id){const item=items.find(i=>i.id===id);if(!item){alert('Item not found.');return;}editId=id;el('mod-t').textContent='Edit — '+item.sku;setV('f-sku',item.sku);setV('f-loc',item.loc);setV('f-name',item.name);setV('f-sub',item.subcat);setV('f-cat',item.category);setV('f-stone',item.stone);setV('f-orig',item.origin);setV('f-certno',item.certNo);setV('f-certb',item.certBody);setV('f-wcts',item.wtCts);setV('f-wkg',item.wtKg);setV('f-ht',item.ht);setV('f-w',item.width);setV('f-d',item.depth);setV('f-cost',item.cost);setV('f-lp',item.listPrice);setV('f-price',item.price);setV('f-usd',item.priceUSD);setV('f-notes',item.notes);setV('f-photo-url',item.photoUrl);el('f-scat').value=item.stoneCat||'';el('f-status').value=item.status||'available';el('f-wunit').value='kg';setC('f-cert',item.certified);setC('f-por',item.por);setC('f-photo',item.hasPhoto);setC('f-web',item.chWeb);setC('f-etsy',item.chEtsy);setC('f-wa',item.chWA);el('photo-status').textContent='';refreshPhotoPreview();el('modOv').classList.remove('hidden');}
 function hideMod(){el('modOv').classList.add('hidden');editId=null;}
 async function savePiece(){
