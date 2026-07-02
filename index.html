@@ -638,6 +638,7 @@ input:checked+.tog-sl:before{transform:translateX(15px)}
       <button class="btn btn-remove" id="d-remove-btn">&#128230; Remove</button>
       <button class="btn" id="d-avail-btn">&#8617; Available</button>
       <button class="btn btn-blue" id="d-qr-btn">&#9707; QR Label</button>
+      <button class="btn" id="d-wa-btn" style="background:#25D366;border-color:#25D366;color:#fff">&#128172; WhatsApp</button>
       <button class="btn btn-gold" id="d-receipt-btn">&#129534; Receipt</button>
       <button class="btn btn-red" id="d-del-btn">&#128465; Delete</button>
     </div>
@@ -1470,6 +1471,7 @@ function showDetail(id){
   el('d-remove-btn').onclick=()=>openRemoveMod(id);
   el('d-avail-btn').onclick=()=>markSt(id,'available');
   el('d-qr-btn').onclick=()=>printSingleQR(id);
+  if(el('d-wa-btn')) el('d-wa-btn').onclick=()=>shareWhatsApp(id);
   if(el('d-receipt-btn')){el('d-receipt-btn').onclick=()=>printReceipt(id);el('d-receipt-btn').style.display=item.status==='sold'?'':'none';}
   el('d-del-btn').onclick=()=>delItem(id);
   el('detOv').classList.remove('hidden');
@@ -1700,6 +1702,21 @@ td.l{color:#9A8F85;width:150px;text-transform:uppercase;font-size:10px;letter-sp
   <div class="rc-ft">Thank you for your purchase.<br>SoulStori · Where Faith Meets Artistry · Gemstone Divine Idols &amp; Sacred Art</div>
 </div><script>window.onload=function(){setTimeout(function(){window.print();},400);};<\/script></body></html>`);
   w.document.close();
+}
+function shareWhatsApp(id){
+  const item=items.find(i=>i.id===id); if(!item)return;
+  const L=[];
+  L.push('*SoulStori* — Where Faith Meets Artistry');
+  L.push('');
+  L.push('*'+item.name+(item.subcat?' · '+item.subcat:'')+'*');
+  if(item.stone) L.push(item.stone+(item.origin?' ('+item.origin+')':''));
+  const dims=[item.ht&&item.ht+'"H',item.width&&item.width+'"W',item.depth&&item.depth+'"D'].filter(Boolean).join(' × ');
+  if(dims) L.push('Size: '+dims);
+  const wt=dispWt(item); if(wt&&wt!=='—') L.push('Weight: '+wt);
+  if(item.certified) L.push('✅ Certified'+(item.certBody?' · '+item.certBody:''));
+  if(item.price) L.push('Price: '+fpF(item.price)); else if(item.por) L.push('Price on Request');
+  const purl=gdUrl(item.photoUrl); if(purl){ L.push(''); L.push(purl); }
+  window.open('https://wa.me/?text='+encodeURIComponent(L.join('\n')),'_blank');
 }
 function printSingleQR(id){
   const item=items.find(i=>i.id===id);if(!item)return;
