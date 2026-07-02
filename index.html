@@ -845,7 +845,7 @@ function sbFetch(path, opts) {
 // ── STATE ─────────────────────────────────────────────────────
 let items=[], filtered=[], editId=null, detId=null, VM='grid', QF=null, SC=null, SD=1;
 const catSel=new Set();
-let catModeOn=false, currentUser=null, userRole='';
+let catModeOn=false, currentUser=null, userRole='', canFinance=false;
 const signedUrlCache={};
 let sellId=null, removeId=null, reserveId=null;
 let tasks=[];
@@ -878,13 +878,14 @@ async function afterLogin(token) {
   el('loading-screen').style.display='flex';
   setProgress(10,'Checking your access…');
   // Get user role from ss_user_roles table
-  const rRes=await fetch(SB_URL+'/rest/v1/ss_user_roles?select=role&user_id=eq.'+currentUser.id,{
+  const rRes=await fetch(SB_URL+'/rest/v1/ss_user_roles?select=role,finance&user_id=eq.'+currentUser.id,{
     headers:{'apikey':SB_KEY,'Authorization':'Bearer '+token}
   });
   if(rRes.ok){
     const rows=await rRes.json();
     userRole=rows[0]?.role||'warehouse';
-  } else { userRole='warehouse'; }
+    canFinance=!!(rows[0]&&rows[0].finance);
+  } else { userRole='warehouse'; canFinance=false; }
   el('user-role-badge').textContent=userRole.charAt(0).toUpperCase()+userRole.slice(1);
   el('user-role-badge').className='role-pill role-'+userRole;
   el('user-email-disp').textContent=currentUser.email;
@@ -941,8 +942,8 @@ function applyRolePermissions() {
   // Hide add/delete for non-admins
   if(el('btn-add-stock')) el('btn-add-stock').style.display=isAdmin?'':'none';
   // Profit & Loss is financial — admins / accounts only
-  if(el('nav-fin')) el('nav-fin').style.display=(isAdmin||isAccounts)?'':'none';
-  if(el('nav-cust')) el('nav-cust').style.display=(isAdmin||isAccounts)?'':'none';
+  if(el('nav-fin')) el('nav-fin').style.display=canFinance?'':'none';
+  if(el('nav-cust')) el('nav-cust').style.display=canFinance?'':'none';
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1207,8 +1208,8 @@ function renderTasks(){
       ${doneT.length?`<div style="font-size:11px;color:var(--stone-l);margin:16px 0 6px">Completed (${doneT.length})</div>${doneT.map(row).join('')}`:''}
     </div>`;
 }
-function goFin(){if(userRole==='warehouse'){alert('Profit & Loss is for admins / accounts only.');return;}QF=null;showOnly('fin');setNav('nav-fin');renderFin();}
-function goCust(){if(userRole==='warehouse'){alert('Customers is for admins / accounts only.');return;}QF=null;showOnly('cust');setNav('nav-cust');renderCust();}
+function goFin(){if(!canFinance){alert('This page is restricted — ask your admin for access.');return;}QF=null;showOnly('fin');setNav('nav-fin');renderFin();}
+function goCust(){if(!canFinance){alert('This page is restricted — ask your admin for access.');return;}QF=null;showOnly('cust');setNav('nav-cust');renderCust();}
 function renderCust(){
   const sold=items.filter(i=>i.status==='sold');
   const n=v=>(typeof v==='number'&&!isNaN(v))?v:0;
